@@ -291,16 +291,8 @@ export function Provider({ children }: { children: ReactNode }) {
     setDemo(false);
     try {
       await signInCloud();
-    } catch (error) {
-      const code =
-        error instanceof Error && "code" in error
-          ? String((error as Error & { code?: string }).code || "")
-          : "";
-      setError(
-        code
-          ? `Sign-in could not start (${code}). Please try again.`
-          : "Sign-in could not start. Please try again.",
-      );
+    } catch {
+      setError("Sign-in could not start. Please try again.");
     }
   };
   const signOut = async () => {
