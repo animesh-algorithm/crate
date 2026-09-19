@@ -25,6 +25,6 @@ const freeHostingAssets: Plugin = {
 };
 export default defineConfig({
   plugins: [react(), freeHostingAssets],
-  test: { include: ["tests/**/*.test.ts"] },
+  test: { include: ["tests/**/*.test.ts"], exclude: ["tests/firestore.rules.test.ts"] },
   build: { chunkSizeWarningLimit: 650 },
 });

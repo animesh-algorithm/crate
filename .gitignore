@@ -11,3 +11,5 @@ supabase/.temp/
 *.private.json
 .vercel
 .env*
+firebase-debug.log
+firestore-debug.log

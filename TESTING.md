@@ -1,5 +1,9 @@
 # Verification
 
+## Admission-state and Firestore rule correction, 2026-09-19
+
+Unit coverage distinguishes a confirmed closed release from a failed availability check, keeping both fail-closed while offering retry only for the latter. Firestore emulator coverage verifies missing/closed admission denial, schema-valid open admission, owner isolation, existing-owner synchronization after admissions close, manifest revision increments, and malformed or oversized document rejection. The emulator is local evidence only; no rules or release document were deployed by this change, and production admission remains closed until the live release checklist passes.
+
 ## Firebase authentication CSP correction, 2026-09-19
 
 The production policy now allows the single Google API script origin used by Firebase Google sign-in while retaining the same-origin default, restricted Firebase auth frame, and prohibition on general `unsafe-eval`. A configuration regression test checks those boundaries. `npm run check` passes with 23 tests and two private checks skipped; the Chromium suite passes ten tests with the opt-in model test skipped. This is local configuration evidence only. A fresh deployment and real Google account are still required to verify the response header and complete OAuth flow.

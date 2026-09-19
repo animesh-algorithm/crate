@@ -38,6 +38,7 @@ const firestore = app ? getFirestore(app) : null;
 export { type User };
 export const cloud = Boolean(auth && firestore);
 const chunkBytes = 180_000;
+const maxChunks = 128;
 
 function manifestRef(uid: string) {
   if (!firestore) throw Error("Cloud sync is not configured.");
@@ -135,6 +136,7 @@ export async function writeCloud(next: Library, _base: Library, revision: number
   const chunks = Array.from({ length: Math.ceil(bytes.length / chunkBytes) || 1 }, (_, index) =>
     toBase64(bytes.subarray(index * chunkBytes, (index + 1) * chunkBytes)),
   );
+  if (chunks.length > maxChunks) throw Error("This library is too large to sync safely. Export a backup and remove some saves before retrying.");
   await setDoc(snapshot, { chunkCount: chunks.length, createdAt: serverTimestamp() });
   for (let index = 0; index < chunks.length; index += 400) {
     const batch = writeBatch(firestore);

@@ -10,8 +10,9 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore --project crate-rules-test \"vitest run --config vitest.rules.config.ts\"",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run typecheck && npm test && npm run test:rules && npm run build",
     "test:model": "CRATE_MODEL_TEST=1 CRATE_PRODUCTION_TEST=1 playwright test --grep \"pinned model\""
   },
   "dependencies": {
@@ -33,12 +34,14 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.55.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.7.0",
     "fake-indexeddb": "^6.2.0",
+    "firebase-tools": "^15.30.2",
     "prettier": "^3.9.8",
     "typescript": "^5.9.0",
     "vite": "^6.3.0",

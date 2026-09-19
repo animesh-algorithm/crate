@@ -44,8 +44,9 @@ import { Empty, Modal, download } from "./components/UI";
 import { CollectionDialog } from "./components/CollectionDialog";
 import { groupId } from "./lib/organize";
 import type { ProposalDraft } from "./lib/db";
+import { admissionFailureMessage } from "./lib/admission";
 export function Home({ onImport }: { onImport: () => void }) {
-  const { library, demo, user, loading, owner, admission } = useLibrary(),
+  const { library, demo, user, loading, owner, admission, retryAdmission } = useLibrary(),
     [create, setCreate] = useState(false),
     [draft, setDraft] = useState<ProposalDraft | null>(null);
   const collections = library.collections.filter((c) => !c.parentId),
@@ -101,7 +102,7 @@ export function Home({ onImport }: { onImport: () => void }) {
         </div>
       </section>
       {!library.items.length ? (
-        <ImportOnboarding onImport={onImport} available={demo || !user || admission === "open" || library.revision > 0} waiting={Boolean(user && admission === "unknown")} />
+        <ImportOnboarding onImport={onImport} available={demo || !user || admission === "open" || library.revision > 0} admission={admission} onRetry={retryAdmission} />
       ) : (
         <>
           {draft?.groups.length ? (
@@ -198,9 +199,10 @@ export function Home({ onImport }: { onImport: () => void }) {
   );
 }
 
-function ImportOnboarding({ onImport, available, waiting }: { onImport: () => void; available: boolean; waiting: boolean }) {
+function ImportOnboarding({ onImport, available, admission, onRetry }: { onImport: () => void; available: boolean; admission: "unknown" | "open" | "closed" | "unavailable"; onRetry: () => Promise<void> }) {
+  const waiting = admission === "unknown";
   return <section className="import-onboarding" aria-labelledby="import-onboarding-title">
-    <div className="import-intro"><span className="eyebrow">START WITH YOUR INSTAGRAM EXPORT</span><h2 id="import-onboarding-title">Bring in your Instagram saves.</h2><p>Crate never asks for your Instagram password. Request the export yourself, then review the file here before anything is added.</p>{available ? <button className="button purple" onClick={onImport}>Choose saved_posts.json <ArrowRight size={18} /></button> : <div className="admission-closed" role="status"><strong>{waiting ? "Checking account availability…" : "New online libraries are not available right now."}</strong><span>Your account is signed in, but import stays closed until private storage has been verified and capacity is available.</span></div>}</div>
+    <div className="import-intro"><span className="eyebrow">START WITH YOUR INSTAGRAM EXPORT</span><h2 id="import-onboarding-title">Bring in your Instagram saves.</h2><p>Crate never asks for your Instagram password. Request the export yourself, then review the file here before anything is added.</p>{available ? <button className="button purple" onClick={onImport}>Choose saved_posts.json <ArrowRight size={18} /></button> : <div className="admission-closed" role="status"><strong>{waiting ? "Checking account availability…" : admission === "closed" ? "New libraries are paused." : "Crate couldn’t check availability."}</strong>{!waiting && <span>{admissionFailureMessage(admission === "closed" ? "closed" : "unavailable")}</span>}{admission === "unavailable" && <button className="text-button" onClick={() => void onRetry()}>Try again</button>}</div>}</div>
     <div className="export-guide"><div className="export-guide-head"><span>INSTAGRAM · CURRENT EXPORT PATH</span><a href="https://about.fb.com/news/2023/10/manage-your-information-across-apps/" target="_blank" rel="noreferrer">Meta export help <ArrowUpRight size={15} /></a></div><ol><li><b>Open your Instagram profile</b><span>Tap the menu, then Accounts Center.</span></li><li><b>Open Your information and permissions</b><span>Choose Export your information.</span></li><li><b>Create an export</b><span>Select your Instagram profile, then Export to device.</span></li><li><b>Choose only your saved items</b><span>Select Saved or Saved items and collections.</span></li><li><b>Set All time and JSON</b><span>JSON is required for Crate to read the export.</span></li><li><b>Download and unzip</b><span>Choose saved_posts.json inside the saved folder.</span></li></ol><p>Instagram may change these labels between app versions. The file must be named <code>saved_posts.json</code>.</p></div>
   </section>;
 }

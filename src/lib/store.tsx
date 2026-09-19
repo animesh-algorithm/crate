@@ -21,6 +21,7 @@ import {
 import { db, loadLocal, saveLocal, clearLocal } from "./db";
 import { emptyLibrary, type Library, validateLibrary } from "./model";
 import { demoLibrary } from "./demo";
+import { admissionStatus, type Admission } from "./admission";
 interface Store {
   library: Library;
   owner: string;
@@ -33,7 +34,7 @@ interface Store {
   conflict: boolean;
   dirty: boolean;
   hasLocalLibrary: boolean;
-  admission: "unknown" | "open" | "closed" | "unavailable";
+  admission: Admission;
   change: (fn: (l: Library) => Library) => Promise<void>;
   undo: () => Promise<void>;
   startDemo: () => Promise<void>;
@@ -41,6 +42,7 @@ interface Store {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   retrySync: () => Promise<void>;
+  retryAdmission: () => Promise<void>;
   resolve: (keepLocal: boolean) => Promise<void>;
   deleteAccount: () => Promise<void>;
   deleteLibrary: () => Promise<void>;
@@ -69,6 +71,18 @@ export function Provider({ children }: { children: ReactNode }) {
     lock = useRef(false),
     generation = useRef(0);
   const owner = demo ? "demo" : user?.uid || "local";
+  const retryAdmission = async () => {
+    if (!cloud) {
+      setAdmission("unavailable");
+      return;
+    }
+    setAdmission("unknown");
+    try {
+      setAdmission(admissionStatus(await readReleaseAdmission()));
+    } catch (error) {
+      setAdmission(admissionStatus(error instanceof Error ? error : Error("Admission check failed")));
+    }
+  };
   useEffect(() => {
     if (!cloud) {
       setLoading(false);
@@ -78,10 +92,7 @@ export function Provider({ children }: { children: ReactNode }) {
       setUser(nextUser);
       setLoading(false);
       if (!nextUser) setAdmission("unknown");
-      else
-        void readReleaseAdmission()
-          .then((open) => setAdmission(open ? "open" : "closed"))
-          .catch(() => setAdmission("closed"));
+      else void retryAdmission();
     });
     void finishSignInRedirect().catch(() => {
       setError("Sign-in could not finish. Please try again.");
@@ -398,6 +409,7 @@ export function Provider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         retrySync,
+        retryAdmission,
         resolve,
         deleteAccount,
         deleteLibrary,

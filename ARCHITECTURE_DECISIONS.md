@@ -65,3 +65,9 @@ Accepted user direction, 2026-09-19; supersedes ADR-014's scroll-choreographed s
 Accepted user direction, 2026-09-19. New personal libraries enter `/app` through Google authentication before Instagram import. Existing device-only libraries are grandfathered; migration is an explicit export, sign-in, and restore operation, never a silent owner change. Authenticated empty accounts read the operator release document and cannot import while admissions are closed. The server-side Firestore rule remains authoritative for first-library creation.
 
 Proposal drafts remain owner-keyed IndexedDB data and never join synchronized Library snapshots. The dashboard and `/app/suggested/:id` expose those groups as searchable Suggested Collections. Global `scope=all|saved|suggested` filtering deduplicates items and overlays draft membership without changing exact or related ranking. Saving one suggestion uses the existing source-preserving collection write and removes only that group from the draft.
+
+## ADR-017: Fail-closed admission states and validated cloud snapshots
+
+Accepted implementation correction, 2026-09-19. A confirmed closed release and a failed release check are distinct client states. Both keep first import closed, but a failed check offers a retry and does not claim that capacity is unavailable. The operator-owned release document remains the only switch for new online libraries.
+
+Firestore rules validate the manifest, snapshot, and chunk shapes used by the client. New manifests and their staged snapshots require open admission; an owner with an existing manifest may continue creating replacement snapshots after admissions close. Manifest updates must advance exactly one revision and reference an existing owner snapshot. Chunk documents must belong to an existing snapshot, match their numeric document ID and declared range, and remain within the shared client/rules chunk bound. Owner-only read and deletion behavior is unchanged.
