@@ -5,6 +5,7 @@ import {
   getAuth,
   getRedirectResult,
   onAuthStateChanged,
+  signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
@@ -78,7 +79,21 @@ export async function finishSignInRedirect() {
 }
 export async function signIn() {
   if (!auth) throw Error("Online accounts are not configured on this installation.");
-  await signInWithRedirect(auth, new GoogleAuthProvider());
+  const provider = new GoogleAuthProvider();
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    // Browsers can block a popup before Firebase has started OAuth. Redirect is
+    // still the dependable fallback for those browsers and for mobile webviews.
+    if (
+      error instanceof Error &&
+      (error as Error & { code?: string }).code === "auth/popup-blocked"
+    ) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+    throw error;
+  }
 }
 export async function signOut() {
   if (auth) await firebaseSignOut(auth);
