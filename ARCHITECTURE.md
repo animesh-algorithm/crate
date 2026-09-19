@@ -2,7 +2,7 @@
 
 ## Runtime and boundaries
 
-A static React application served by Cloudflare Pages Free. Browser IndexedDB is the offline cache and authority for device-only libraries. Optional Supabase Free PostgreSQL is the cloud authority for signed-in libraries; its RPC functions enforce ownership, activation capacity, quotas, and compare-and-swap revisions. No paid runtime, D1, R2, Vectorize, Better Auth, Resend, OpenAI, or cloud queue is required.
+A static React application served by Vercel Hobby. Browser IndexedDB is the offline cache and authority for device-only libraries. Optional Supabase Free PostgreSQL is the cloud authority for signed-in libraries; its RPC functions enforce ownership, activation capacity, quotas, and compare-and-swap revisions. Vercel Hobby is permitted only for personal, non-commercial use under its current terms; public activation is blocked unless that remains true. No paid runtime, D1, R2, Vectorize, Better Auth, Resend, OpenAI, or cloud queue is required.
 
 ```mermaid
 flowchart LR
@@ -72,8 +72,8 @@ Raw upload stays in memory only. Normalized data persists until deletion; local 
 
 ## Deployment and cost
 
-Use free Pages subdomain, Supabase Free project, and no payment-enabled upgrades. Cloud activation disabled by default. Initial ten libraries; operator monitors DB at 350 MB and monthly egress at 4 GB, closing activation/imports for headroom. These are operational controls, not automated guarantees against provider policy changes. No keepalive traffic to evade inactivity pausing. CI checks/build/browser tests; output dist. Separate development and public project credentials. Additive migrations, protected backups, restore rehearsal, and live integration verification are required before activation. See OPERATIONS.md.
+Use a free Vercel Hobby subdomain only while the deployment remains personal and non-commercial, plus a Supabase Free project, with no payment-enabled upgrades. Cloud activation disabled by default. Initial ten libraries; operator monitors DB at 350 MB and monthly egress at 4 GB, closing activation/imports for headroom. These are operational controls, not automated guarantees against provider policy changes. No keepalive traffic to evade inactivity pausing. CI checks/build/browser tests; output dist. Separate development and public project credentials. Additive migrations, protected backups, restore rehearsal, and live integration verification are required before activation. See OPERATIONS.md.
 
-The runtime uses Transformers.js 4 and local standard WASM assets (about 14 MB). Unused asyncify WASM is excluded from the build to satisfy the Pages 25 MiB per-asset ceiling; production browser tests verify this path under the deployed CSP. Model input is truncated to its tokenizer context window; exact search retains the full captions. Language filters use franc-min estimates on longer captions, with unknown retained for insufficient evidence.
+The runtime uses Transformers.js 4 and local standard WASM assets (about 14 MB). Unused asyncify WASM is excluded from the build to keep the static artifact lean; production browser tests verify this path under the deployed CSP. Model input is truncated to its tokenizer context window; exact search retains the full captions. Language filters use franc-min estimates on longer captions, with unknown retained for insufficient evidence.
 
 On-demand Reel display uses a sandboxed Instagram iframe from a canonical Reel URL. CSP frame-src permits only https://www.instagram.com. No Meta script executes in the parent application and no Instagram media is fetched or retained by Crate. Card previews lazy-load Instagram embeds while browsing; their inert frames are covered by a modal-opening button. Preview dialogs mount only on explicit user activation and unmount on close; privacy copy discloses the third-party request and cookies. Creator website links retain validated HTTP(S) source URLs without credentials.

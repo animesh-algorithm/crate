@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from "vitest/config";
 import react from "@vitejs/plugin-react";
 // ORT bundles an optional asyncify binary even with an explicit plain-WASM backend.
-// We never use that backend; omitting it keeps Pages' 25 MiB single-asset limit.
+// We never use that backend; omitting it keeps the static artifact lean.
 const freeHostingAssets: Plugin = {
   name: "free-hosting-assets",
   generateBundle(_options, bundle) {

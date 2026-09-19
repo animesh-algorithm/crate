@@ -2,11 +2,11 @@
 
 ## Before public activation
 
-- Create free Supabase and Pages projects only. No trial dependencies, payment-enabled overages, custom-domain purchases, or paid inference keys.
+- Create a Supabase Free project and a Vercel Hobby project only if the deployment is personal and non-commercial under Vercel's current terms. No trial dependencies, payment-enabled overages, custom-domain purchases, or paid inference keys.
 - Apply both SQL migrations in order; configure public URL/key, exact Google OAuth callbacks, allowed app redirects, and APP_ORIGIN for deletion. Review the additive organization migration against an existing library backup before deployment.
 - Deploy deletion function; verify no token/wrong token/wrong origin/valid account deletion. Verify user A cannot read or mutate B through direct RPC or table requests.
 - Publish operator name, privacy contact, and jurisdiction-appropriate terms. The repository contains product policy text, not a claim of legal review.
-- Verify response headers in the deployed site, OAuth callback refresh, user session restoration, mobile navigation, cross-device conflicts, and export/restore.
+- Verify `vercel.json` response headers and SPA deep links in the deployed site, OAuth callback refresh, user session restoration, mobile navigation, cross-device conflicts, and export/restore.
 - Measure model execution on representative phones/desktops and organization quality against private owner-reviewed examples. Never commit those examples.
 - Establish encrypted manual database exports and deletion-ledger retention/recovery. Supabase Free does not supply the paid backup guarantee. Rehearse restore before activation.
 - Once verified, set accepting=true in release_config. Default max_libraries=10. Existing libraries remain accessible when accepting=false.
@@ -31,7 +31,7 @@ Make protected manual exports periodically and before migration. Encrypt at rest
 
 ## Release and rollback
 
-CI validates typecheck/unit-SQL/browser/build. Deploy static dist to Pages with public build variables. Use separate dev/prod keys. Save an encrypted pre-migration export. Prefer additive migrations; deploy compatible code before destructive schema changes. Roll back frontend to known good deployment if necessary; restoring a database requires deletion reconciliation, not blindly importing old exports. Environment secrets are names only in docs; service role exists solely inside Supabase functions.
+CI validates typecheck/unit-SQL/browser/build. Import the GitHub repository into Vercel, deploy the static `dist` output with public build variables, and keep preview and production credentials separate. Save an encrypted pre-migration export. Prefer additive migrations; deploy compatible code before destructive schema changes. Roll back the frontend to a known good Vercel deployment if necessary; restoring a database requires deletion reconciliation, not blindly importing old exports. Environment secrets are names only in docs; service role exists solely inside Supabase functions.
 
 ## Telemetry
 
@@ -39,7 +39,9 @@ No analytics, replay, private content/query logs, or inference traces. Provider 
 
 ## Sources to recheck
 
-- https://developers.cloudflare.com/pages/platform/limits/
+- https://vercel.com/docs/plans/hobby
+- https://vercel.com/docs/limits
+- https://vercel.com/docs/frameworks/frontend/vite
 - https://supabase.com/pricing
 - https://supabase.com/docs/guides/auth/social-login/auth-google
 - https://supabase.com/docs/guides/auth/auth-smtp

@@ -25,15 +25,15 @@ npm and package-lock.json provide reproducible installs locally and in CI. Maint
 
 ## Stack
 
-React 19, TypeScript, Vite, React Router, CSS design tokens, Lucide, self-hosted DM Sans and Barlow Condensed. Dexie/IndexedDB stores local libraries, revisions, and search vectors. MiniSearch provides exact search. Transformers.js runs pinned quantized multilingual E5-small in a dedicated browser worker. Source-based collection suggestions work without downloading a model. Supabase Free provides PostgreSQL, Row Level Security, Google authentication, atomic revision checks, and an account-deletion function. Cloudflare Pages Free serves static assets.
+React 19, TypeScript, Vite, React Router, CSS design tokens, Lucide, self-hosted DM Sans and Barlow Condensed. Dexie/IndexedDB stores local libraries, revisions, and search vectors. MiniSearch provides exact search. Transformers.js runs pinned quantized multilingual E5-small in a dedicated browser worker. Source-based collection suggestions work without downloading a model. Supabase Free provides PostgreSQL, Row Level Security, Google authentication, atomic revision checks, and an account-deletion function. Vercel Hobby serves static assets only while this remains a personal, non-commercial project under Vercel's current terms.
 
 ## Optional online accounts
 
 1. Create a Supabase **Free** project. Apply `supabase/migrations/202609190001_library.sql`, then `supabase/migrations/202609190002_organization.sql`, using the SQL editor or Supabase CLI.
 2. Copy `.env.example` to `.env`. Set the public URL and anon/publishable key. Never use a service-role key in Vite variables.
-3. Configure Google OAuth in Google Cloud and Supabase. Google's callback is the Supabase `/auth/v1/callback` URL. Supabase's allowed app redirect is `https://YOUR-SITE.pages.dev/auth/callback`. Use exact origins, not production wildcards.
+3. Configure Google OAuth in Google Cloud and Supabase. Google's callback is the Supabase `/auth/v1/callback` URL. Supabase's allowed app redirect is `https://YOUR-SITE.vercel.app/auth/callback`. Use exact origins, not production wildcards.
 4. Set `APP_ORIGIN` for the deletion function, deploy `supabase/functions/delete-account`, and verify bearer-token validation with a real account. Supabase supplies its service-role secret inside the function only.
-5. Build and deploy `dist` to Cloudflare Pages. Use the included redirects and security headers. Preview and production use separate project keys. No paid plan, trial, or domain is required.
+5. Import the GitHub repository into a Vercel Hobby project, use `npm run build` with `dist` as the output directory, and use `vercel.json` for the SPA fallback and security headers. Preview and production use separate project keys. Do not start a paid plan, trial, or paid overages. Reconfirm Vercel's personal/non-commercial Hobby eligibility immediately before public release.
 6. Complete the public release checks in OPERATIONS.md. New cloud library activation is **closed by default**. Once checks pass, an operator may run `update public.release_config set accepting=true where id=true;`. Ten active libraries are allowed initially.
 
 Device-only data is not silently uploaded when you sign in. Export the local library, sign in, then restore the backup to transfer it deliberately. Signing out of an online account clears its local cache; pending changes must first sync or be exported and explicitly resolved.

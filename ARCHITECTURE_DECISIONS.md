@@ -10,6 +10,7 @@ Confirmed product decisions are in SPEC.md. Defaults introduced by the $0 constr
 | 004 | Source-preserving imports and explicit personal overrides       | Accepted confirmed product contract               |
 | 005 | Google-only auth, no transactional email                        | Accepted $0 default                               |
 | 006 | Capacity-bounded launch, explicit free-service limitations      | Accepted; public activation requires verification |
+| 012 | Vercel Hobby replaces Cloudflare Pages for static hosting       | Accepted; eligibility gate added                  |
 
 The prior Cloudflare Workers Paid/D1/R2/Queues/Vectorize/OpenAI/Resend architecture is superseded. Prior no-training provider requirements are satisfied more strongly for inference content by processing entirely on-device; authentication and normalized online storage still have their own processors. The original monthly AI allowance and full-refresh restriction disappear because no metered AI calls exist.
 
@@ -34,3 +35,7 @@ Accepted user change, 2026-09-19; supersedes ADR-009's activation-only rule for 
 ## ADR-011: Device drafts and selective replacement
 
 Accepted user direction, 2026-09-19; supersedes ADR-007's dialog and batch approval. `/organize` holds an owner-keyed IndexedDB proposal separately from the synchronized library. Navigation/reload retains a proposal, but processing itself pauses on close. Smart mode uses the pinned model and caption/hashtag/personal evidence; text-only mode is a conservative fallback. Anchored topics merge humor synonyms and keep Study, Productivity, and AI Tools distinct. Strong recurring personal tags can surface other interests. These are implementation defaults, not measured semantic quality; owner-reviewed precision and coverage are still pending. Each suggestion is edited and saved independently. A same-identity automatic collection is replaced only after review; manually edited collections and exclusions take precedence. Custom category definitions are synchronized and exported with the library, while proposal drafts and embeddings never enter the cloud or backup. New fields are optional/defaulted for older version-1 libraries. The initial SQL migration and compatible additive migration validate them server-side; the latter has only local PostgreSQL verification and needs operator review before deployment. No deployment is authorized in this task.
+
+## ADR-012: Vercel Hobby static hosting
+
+Accepted user decision, 2026-09-19. Vercel Hobby replaces Cloudflare Pages as the static host. `vercel.json` is the deployment authority for Vite build output, SPA deep-link fallback, and security headers; Cloudflare-specific `_headers` and `_redirects` are removed. The project remains static and has no Vercel Functions, analytics, or paid features. Vercel's current Hobby terms restrict use to personal, non-commercial projects, so its eligibility is a release gate rather than an assumption. A commercial service, paid plan, trial, paid overages, or a changed eligibility status blocks public activation until a new hosting decision is explicitly approved and recorded.

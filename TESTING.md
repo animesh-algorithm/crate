@@ -26,7 +26,7 @@ Cloud release requires live Google session/callback, deployed owner policies, cr
 
 Local verification on 2026-09-19:
 
-- TypeScript and production build pass; build rejects any asset above the Pages 25 MiB per-file limit.
+- TypeScript and production build pass. Vercel deployment artifact limits and deployed headers require independent verification.
 - 21 domain, storage, SQL, and private-import checks pass, including read-only validation of the external 1,749-record personal export (no skipped rows or duplicates). Without that private path, 20 checks pass and the private check is skipped.
 - All five production Chromium browser tests pass. Coverage exercises import/reimport, search, edits, persistence, collection moves/merges/successive undo, export/restore, deletion, and the pinned model. Model smoke inference produces eight finite, normalized 384-dimensional vectors and related search runs under production security headers; no asyncify assets are requested.
 - Responsive screenshots and axe checks pass at 375, 768, 1024, and 1440 pixels. Desktop and mobile screenshots were inspected against the design direction.
