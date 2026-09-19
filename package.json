@@ -18,8 +18,8 @@
     "@fontsource/barlow-condensed": "^5.2.0",
     "@fontsource/dm-sans": "^5.2.0",
     "@huggingface/transformers": "^4.3.0",
-    "@supabase/supabase-js": "^2.57.0",
     "dexie": "^4.2.0",
+    "firebase": "^12.19.0",
     "franc-min": "^6.2.0",
     "graphology": "^0.26.0",
     "graphology-communities-louvain": "^2.0.2",
@@ -32,7 +32,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
-    "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.55.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",

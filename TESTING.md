@@ -6,11 +6,11 @@ Search now runs only on Enter or the Search button, not during typing or after a
 
 ## Automated checks
 
-`npm run check` runs TypeScript, meaningful domain/SQL tests, and production build. SQL tests use PGlite PostgreSQL with simulated auth roles/functions; they are evidence of SQL behavior, not live Supabase configuration. `npm run test:e2e` runs Chromium browser tests and axe with target-width screenshots in ignored test-results.
+`npm run check` runs TypeScript, meaningful domain tests, and production build. Firestore rules and Firebase Authentication require independent live verification; local tests do not establish deployed access control. `npm run test:e2e` runs Chromium browser tests and axe with target-width screenshots in ignored test-results.
 
 Domain coverage: canonical identities/unsafe links, caption variants, malformed roots and entries, personal edits on reimport, absent saves, tombstones, atomic quota rejection, merge/delete source preservation, invalid hierarchy, insufficient context, manual overrides, user-context search.
 
-Database coverage: closed activation, slot capacity, direct cross-account read isolation, denied direct writes, compare-and-swap conflicts, invalid source links, importing pause, account cascade, private deletion ledger.
+Firebase release coverage still required: closed admission gate, direct cross-account read isolation, denied writes, compare-and-swap conflicts, and authenticated account deletion. These need emulator or live-project evidence; the former SQL simulation was removed with Supabase.
 
 Browser coverage: import preview/consent, search, notes, reload persistence, favorites, export download, tombstone reimport, sample isolation, collection creation, responsive overflow and axe at 375/768/1024/1440.
 
@@ -20,23 +20,23 @@ Inspect generated screenshots against DESIGN.md/reference. Keyboard navigation, 
 
 Private evaluation: 150 owner-reviewed saves stratified by sparse/multiple captions, language, and topic ambiguity; 40 remembered-save queries. Target automatic precision 85% and recall@10 85%; record coverage and unsupported/unsorted rate to avoid passing by organizing nothing. Include prompt-looking text as inert evidence; no generative tools exist. Keep personal evaluation files out of git.
 
-Cloud release requires live Google session/callback, deployed owner policies, cross-device conflicts, server quota validation, exact-origin deletion, recovery reconciliation, actual provider usage, and operator legal/contact configuration. No local-only pass establishes those external outcomes.
+Cloud release requires live Google session/callback, deployed Firestore owner rules, cross-device conflicts, provider quota validation, authenticated account deletion, recovery reconciliation, actual provider usage, and operator legal/contact configuration. No local-only pass establishes those external outcomes.
 
 ## Current measured results
 
 Local verification on 2026-09-19:
 
 - TypeScript and production build pass. Vercel deployment artifact limits and deployed headers require independent verification.
-- 21 domain, storage, SQL, and private-import checks pass, including read-only validation of the external 1,749-record personal export (no skipped rows or duplicates). Without that private path, 20 checks pass and the private check is skipped.
+- 21 domain, storage, and private-import checks previously passed, including read-only validation of the external 1,749-record personal export (no skipped rows or duplicates). Firebase rule verification is separate live evidence, not covered by those local checks.
 - All five production Chromium browser tests pass. Coverage exercises import/reimport, search, edits, persistence, collection moves/merges/successive undo, export/restore, deletion, and the pinned model. Model smoke inference produces eight finite, normalized 384-dimensional vectors and related search runs under production security headers; no asyncify assets are requested.
 - Responsive screenshots and axe checks pass at 375, 768, 1024, and 1440 pixels. Desktop and mobile screenshots were inspected against the design direction.
 - Full npm dependency audit reports zero vulnerabilities.
 
-Google OAuth, deployed Supabase policies/deletion, public hosting, backup recovery, real phones, and the owner-reviewed semantic quality targets remain unverified. Model smoke inference is not evidence of 85% precision or recall.
+Google OAuth, deployed Firebase rules/deletion, public hosting, backup recovery, real phones, and the owner-reviewed semantic quality targets remain unverified. Model smoke inference is not evidence of 85% precision or recall.
 
 ## Reviewed collection and metadata update, 2026-09-19
 
-`npm run check` passes (22 domain/storage/SQL checks, external private check skipped by default). The separate external private export check passes for all 1,749 saves, verifies creator coverage and nonempty hashtag coverage, and retains no source file in the repository. Development and production Chromium suites both pass seven tests; the opt-in model download test is skipped in these runs. Proposal tests use synthetic worker output to exercise parent/child navigation, separate review gates, additive selection, and existing collection preservation; they do not measure semantic grouping quality. Screenshot inspection, axe checks, and overflow checks pass at 375/768/1024/1440. Real export media arrays are empty; image retrieval remains unsupported.
+`npm run check` passed before the Firebase migration (domain/storage checks, external private check skipped by default). The separate external private export check passes for all 1,749 saves, verifies creator coverage and nonempty hashtag coverage, and retains no source file in the repository. Development and production Chromium suites both pass seven tests; the opt-in model download test is skipped in these runs. Proposal tests use synthetic worker output to exercise parent/child navigation, separate review gates, additive selection, and existing collection preservation; they do not measure semantic grouping quality. Screenshot inspection, axe checks, and overflow checks pass at 375/768/1024/1440. Real export media arrays are empty; image retrieval remains unsupported.
 
 Creator metadata verification: nested Owner names and safe profile URLs survive import/reimport, while invalid URL schemes are discarded and personal notes retained. Browser import checks display names and profile links, mobile/desktop screenshots, overflow, and detail accessibility. External export validation checks creator names and profile URLs without printing private content.
 

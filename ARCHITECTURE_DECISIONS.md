@@ -11,6 +11,7 @@ Confirmed product decisions are in SPEC.md. Defaults introduced by the $0 constr
 | 005 | Google-only auth, no transactional email                        | Accepted $0 default                               |
 | 006 | Capacity-bounded launch, explicit free-service limitations      | Accepted; public activation requires verification |
 | 012 | Vercel Hobby replaces Cloudflare Pages for static hosting       | Accepted; eligibility gate added                  |
+| 013 | Firebase Auth and Firestore replace Supabase cloud services    | Accepted; online activation remains closed        |
 
 The prior Cloudflare Workers Paid/D1/R2/Queues/Vectorize/OpenAI/Resend architecture is superseded. Prior no-training provider requirements are satisfied more strongly for inference content by processing entirely on-device; authentication and normalized online storage still have their own processors. The original monthly AI allowance and full-refresh restriction disappear because no metered AI calls exist.
 
@@ -39,3 +40,11 @@ Accepted user direction, 2026-09-19; supersedes ADR-007's dialog and batch appro
 ## ADR-012: Vercel Hobby static hosting
 
 Accepted user decision, 2026-09-19. Vercel Hobby replaces Cloudflare Pages as the static host. `vercel.json` is the deployment authority for Vite build output, SPA deep-link fallback, and security headers; Cloudflare-specific `_headers` and `_redirects` are removed. The project remains static and has no Vercel Functions, analytics, or paid features. Vercel's current Hobby terms restrict use to personal, non-commercial projects, so its eligibility is a release gate rather than an assumption. A commercial service, paid plan, trial, paid overages, or a changed eligibility status blocks public activation until a new hosting decision is explicitly approved and recorded.
+
+## ADR-013: Firebase client-owned cloud sync
+
+Accepted user decision, 2026-09-19; supersedes ADR-001 and the Supabase-specific parts of ADR-003. Supabase could not provide another $0 project because the account-wide free-project allocation was already consumed. Crate uses Firebase Spark with Google-only Firebase Authentication and Cloud Firestore in `asia-south1` (Mumbai). Gemini in Firebase and Google Analytics remain disabled.
+
+Firestore rules isolate every `/users/{uid}` library path to its authenticated owner. A small manifest holds the active snapshot revision; snapshot chunks hold source-preserving library state. The browser writes chunks before atomically advancing the manifest revision, preserving explicit conflicts while avoiding Firestore's per-document size ceiling. New online-library creation remains denied until the operator changes the release gate.
+
+No Cloud Functions, paid billing, Firebase hosting, service-account credential, deletion ledger, or server-side personal-data processor is introduced. Account deletion deletes the caller's Firestore snapshots and manifest, then that same active Firebase Authentication account; recent-login requirements may require another sign-in. Rule deployment and live authenticated create/read/update/delete verification remain release gates.

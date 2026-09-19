@@ -6,8 +6,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User } from "@supabase/supabase-js";
-import { cloud, readCloud, writeCloud, deleteCloudAccount } from "./cloud";
+import type { User } from "firebase/auth";
+import {
+  cloud,
+  listenAuth,
+  readCloud,
+  writeCloud,
+  deleteCloudAccount,
+  signIn as signInCloud,
+  signOut as signOutCloud,
+} from "./cloud";
 import { db, loadLocal, saveLocal, clearLocal } from "./db";
 import { emptyLibrary, type Library, validateLibrary } from "./model";
 import { demoLibrary } from "./demo";
@@ -52,21 +60,17 @@ export function Provider({ children }: { children: ReactNode }) {
     revision = useRef(0),
     lock = useRef(false),
     generation = useRef(0);
-  const owner = demo ? "demo" : user?.id || "local";
+  const owner = demo ? "demo" : user?.uid || "local";
   useEffect(() => {
     if (!cloud) {
       setLoading(false);
       return;
     }
-    void cloud.auth.getSession().then(({ data, error }) => {
-      if (error) setError("Sign-in could not be restored. Please try again.");
-      setUser(data.session?.user || null);
+    const unsubscribe = listenAuth((nextUser) => {
+      setUser(nextUser);
       setLoading(false);
     });
-    const { data } = cloud.auth.onAuthStateChange((_event, session) =>
-      setUser(session?.user || null),
-    );
-    return () => data.subscription.unsubscribe();
+    return unsubscribe;
   }, []);
   useEffect(() => {
     let active = true;
@@ -114,7 +118,7 @@ export function Provider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [owner, user?.id, demo]);
+  }, [owner, user?.uid, demo]);
   const change = async (
     fn: (l: Library) => Library,
     after?: () => Promise<void>,
@@ -280,21 +284,18 @@ export function Provider({ children }: { children: ReactNode }) {
     }
     sessionStorage.removeItem("crate-demo");
     setDemo(false);
-    const { error } = await cloud.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/auth/callback" },
-    });
-    if (error) setError("Sign-in could not start. Please try again.");
+    try {
+      await signInCloud();
+    } catch {
+      setError("Sign-in could not start. Please try again.");
+    }
   };
   const signOut = async () => {
-    if (dirty || (user && (await loadLocal(user.id)).dirty))
+    if (dirty || (user && (await loadLocal(user.uid)).dirty))
       throw Error("Sync or export your changes before signing out.");
-    if (cloud) {
-      const { error } = await cloud.auth.signOut();
-      if (error) throw Error("Sign-out could not finish.");
-    }
+    if (cloud) await signOutCloud();
     await clearLocal(owner);
-    if (user && user.id !== owner) await clearLocal(user.id);
+    if (user && user.uid !== owner) await clearLocal(user.uid);
     setUser(null);
     sessionStorage.removeItem("crate-demo");
     setDemo(false);
@@ -344,7 +345,6 @@ export function Provider({ children }: { children: ReactNode }) {
       }
       if (user && !demo) await deleteCloudAccount();
       await clearLocal(owner);
-      if (user && !demo && cloud) await cloud.auth.signOut({ scope: "local" });
       current.current = emptyLibrary();
       setLibrary(emptyLibrary());
       setUser(null);

@@ -2,7 +2,7 @@
 
 ## Runtime and boundaries
 
-A static React application served by Vercel Hobby. Browser IndexedDB is the offline cache and authority for device-only libraries. Optional Supabase Free PostgreSQL is the cloud authority for signed-in libraries; its RPC functions enforce ownership, activation capacity, quotas, and compare-and-swap revisions. Vercel Hobby is permitted only for personal, non-commercial use under its current terms; public activation is blocked unless that remains true. No paid runtime, D1, R2, Vectorize, Better Auth, Resend, OpenAI, or cloud queue is required.
+A static React application served by Vercel Hobby. Browser IndexedDB is the offline cache and authority for device-only libraries. Optional Firebase Spark is the cloud authority for signed-in libraries: Firestore rules enforce owner-only paths and a manifest transaction enforces compare-and-swap revisions. Vercel Hobby is permitted only for personal, non-commercial use under its current terms; public activation is blocked unless that remains true. No paid runtime, Cloud Functions, D1, R2, Vectorize, Better Auth, Resend, OpenAI, or cloud queue is required.
 
 ```mermaid
 flowchart LR
@@ -15,8 +15,8 @@ flowchart LR
  Cache --> Group[Organization browser worker]
  Group --> Proposal[Collection proposal]
  Proposal --> Local
- Local <-->|Private text and edits only| DB[Supabase RLS and revision RPC]
- Google[Google sign-in] --> Auth[Supabase Auth]
+ Local <-->|Private text and edits only| DB[Firestore owner rules and revision manifest]
+ Google[Google sign-in] --> Auth[Firebase Auth]
  Auth --> DB
 ```
 
@@ -24,7 +24,7 @@ flowchart LR
 
 Types and Zod validators in src/lib/model.ts describe Item, Collection, Library, ImportRecord, Intent. An item holds canonical shortcode/URL, independent fbid, distinct captions, creator, hashtags, unknown-semantics export timestamp, import date, favorite/archive/note/tags/intent, memberships, and explicit exclusions. Collections have stable ID, name, parent, manual-override marker, deterministic style. Libraries include source items, collections, removal tombstones, suppressed automatic collection IDs, bounded import history, and local revision.
 
-Cloud persistence uses one validated JSONB snapshot per owner, rather than duplicating thousands of relational item rows and join tables for ten initial libraries. The API sends changed items/removals plus collection metadata, not full item data on every edit. PostgreSQL merges patches atomically under a row lock. This deliberate simplification is recorded in ADR-003. An eventual relational migration can preserve stable identities and behavior. Do not mistake a JSONB document for lack of server validation: constraints and security-definer functions are the authority.
+Cloud persistence uses a small owner-only manifest plus immutable, bounded Firestore snapshot chunks. The client stages chunks, atomically advances the manifest only when its expected revision matches, and then best-effort removes the prior snapshot. This avoids Firestore's per-document size limit without silently overwriting another device. Firestore rules, not browser checks, are the authority for owner isolation and the closed release gate.
 
 IndexedDB stores owner-keyed snapshots, up to ten prior local versions, owner/item/source-hash vectors, and separate owner-keyed proposal drafts. Model assets use the browser HTTP/Cache API mechanisms from Transformers.js. No original uploaded files or image assets are retained.
 
@@ -32,7 +32,7 @@ IndexedDB stores owner-keyed snapshots, up to ten prior local versions, owner/it
 
 The browser worker accepts a bounded JSON string, parses the observed label_values format, validates post links, normalizes supported fields, reports row-specific invalid entries, and computes a SHA-256 digest. The UI previews before committing. Local transaction validates the resulting library, appends import metadata, and checkpoints history. Duplicate source identities coalesce caption variants within an upload; reimports update source fields while retaining all personal state. Items absent from an export remain. Tombstones suppress surprise restoration. The 5,000 count includes archive.
 
-Cloud allowance is 5,000 saves and 15 MiB normalized item text; JSON serialization differs slightly between browser and PostgreSQL, so the server's stricter bound can reject a near-limit local change. That change remains exportable locally, never silently dropped. Items and collection identities must be unique; nesting is at most one level; memberships must resolve to collections; URLs are restricted to original Instagram p/reel/tv posts.
+Local allowance is 5,000 saves and 15 MiB normalized item text. Cloud snapshots are chunked so a valid bounded library does not depend on one Firestore document's size limit. Items and collection identities must be unique; nesting is at most one level; memberships must resolve to collections; URLs are restricted to original Instagram p/reel/tv posts.
 
 ## Organization and search
 
@@ -50,11 +50,12 @@ MiniSearch indexes captions/hashtags/notes/tags, creators, URLs, and collection 
 
 Browser import worker request: raw JSON string; response {preview:{items,issues,duplicates,total,digest}} or {error}. Inference worker request {id,text}; response {id,vector} or safe error; download events {type:'download',loaded,total}. Organization worker request {items,vectors?}; response {groups} or safe error.
 
-Supabase RPC:
+Firebase cloud interface:
 
-- open_library(): authenticated only; returns {state,revision}. Atomically checks release accepting flag and maximum slots for first activation. Existing accounts remain accessible when new activation closes.
-- patch_library(expected_revision,patch): changed item objects, removed IDs, collections, tombstones, imports. Auth derives owner; caller cannot target another account. Atomically merges, validates, checks quota, publishes revision, returns revision. Wrong revision raises REVISION_CONFLICT. No unauthenticated mutations or direct table writes are granted.
-- delete-account edge function: POST, exact configured Origin, bearer token verified through auth.getUser, then admin deletes that exact user. No target owner parameter. Cascading library deletion and private deletion-ledger trigger accompany it.
+- Google sign-in is handled by Firebase Authentication. Firestore paths are scoped below `/users/{uid}` and rules compare that uid with the authenticated caller.
+- A manifest holds `{revision,snapshotId}`. A client stages bounded snapshot chunks, then a Firestore transaction advances the manifest only when the expected revision matches. Wrong revisions raise `REVISION_CONFLICT`.
+- New manifest and snapshot creation requires the operator-owned `/config/release` document to have `accepting=true`; it is false by default. Existing user data remains readable, writable, and deletable when admissions close.
+- Account deletion deletes every known snapshot and the manifest, then deletes the active Firebase Authentication account. Recent login may be required by Firebase.
 
 Application routes: /, /organize, /saves, /search, /collection/:id, /save/:id, /settings, /help, /privacy, /terms, /auth/callback, 404. Query filters are URL-addressable. Stable item IDs survive reimport and export.
 
@@ -66,13 +67,13 @@ Preview/file parsing, model download/inference, organization, storage exhaustion
 
 ## Security, privacy, and retention
 
-Row Level Security plus restricted grants; private tables have no anonymous policies. Security-definer functions use empty search_path and authenticated derived ownership. Secrets only in Supabase function environment. OAuth PKCE and exact allowed redirects. JSX renders source as text; no dangerouslySetInnerHTML. Only validated HTTPS Instagram external links, noopener/noreferrer, no arbitrary scraping. Static CSP, frame denial, restrictive permissions, safe referrer policy. No private query/caption logs, analytics, replay, or provider LLM calls.
+Firestore owner rules deny unauthenticated callers and prevent a user from reading or changing another user's documents. Firebase web configuration is public identity data; no service-account credential exists in the browser. Google sign-in permits exact authorized domains. JSX renders source as text; no dangerouslySetInnerHTML. Only validated HTTPS Instagram external links, noopener/noreferrer, no arbitrary scraping. Static CSP, frame denial, restrictive permissions, safe referrer policy. No private query/caption logs, analytics, replay, or provider LLM calls.
 
-Raw upload stays in memory only. Normalized data persists until deletion; local history ten versions, local vectors bounded by saved identities. Model cache is public, not user content. Export contains full source and edits, not auth secrets. Sign-out removes the current account's private local stores. Account deletion cascades live cloud records and records a private owner/time/kind deletion record for backup restoration. Other offline devices can retain cached content; their removal is not remotely guaranteed. Manual recovery exports are encrypted on operator storage and expire within 30 days. Apply deletion ledger before restoring access.
+Raw upload stays in memory only. Normalized data persists until deletion; local history ten versions, local vectors bounded by saved identities. Model cache is public, not user content. Export contains full source and edits, not auth secrets. Sign-out removes the current account's private local stores. Account deletion removes the active account's Firestore snapshots before its Firebase Authentication record. Other offline devices can retain cached content; their removal is not remotely guaranteed. Manual recovery exports are encrypted on operator storage and expire within 30 days.
 
 ## Deployment and cost
 
-Use a free Vercel Hobby subdomain only while the deployment remains personal and non-commercial, plus a Supabase Free project, with no payment-enabled upgrades. Cloud activation disabled by default. Initial ten libraries; operator monitors DB at 350 MB and monthly egress at 4 GB, closing activation/imports for headroom. These are operational controls, not automated guarantees against provider policy changes. No keepalive traffic to evade inactivity pausing. CI checks/build/browser tests; output dist. Separate development and public project credentials. Additive migrations, protected backups, restore rehearsal, and live integration verification are required before activation. See OPERATIONS.md.
+Use a free Vercel Hobby subdomain only while the deployment remains personal and non-commercial, plus Firebase Spark with no payment-enabled upgrade. Cloud activation is disabled by default. Firestore's exact current Spark quotas are a release gate; close admissions before headroom is exhausted. These are operational controls, not automated guarantees against provider policy changes. No synthetic traffic to evade provider limits. CI checks/build/browser tests; output dist. Separate development and public project configurations. Protected backups, restore rehearsal, deployed-rule review, and live integration verification are required before activation. See OPERATIONS.md.
 
 The runtime uses Transformers.js 4 and local standard WASM assets (about 14 MB). Unused asyncify WASM is excluded from the build to keep the static artifact lean; production browser tests verify this path under the deployed CSP. Model input is truncated to its tokenizer context window; exact search retains the full captions. Language filters use franc-min estimates on longer captions, with unknown retained for insufficient evidence.
 

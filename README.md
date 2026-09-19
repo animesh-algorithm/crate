@@ -25,16 +25,15 @@ npm and package-lock.json provide reproducible installs locally and in CI. Maint
 
 ## Stack
 
-React 19, TypeScript, Vite, React Router, CSS design tokens, Lucide, self-hosted DM Sans and Barlow Condensed. Dexie/IndexedDB stores local libraries, revisions, and search vectors. MiniSearch provides exact search. Transformers.js runs pinned quantized multilingual E5-small in a dedicated browser worker. Source-based collection suggestions work without downloading a model. Supabase Free provides PostgreSQL, Row Level Security, Google authentication, atomic revision checks, and an account-deletion function. Vercel Hobby serves static assets only while this remains a personal, non-commercial project under Vercel's current terms.
+React 19, TypeScript, Vite, React Router, CSS design tokens, Lucide, self-hosted DM Sans and Barlow Condensed. Dexie/IndexedDB stores local libraries, revisions, and search vectors. MiniSearch provides exact search. Transformers.js runs pinned quantized multilingual E5-small in a dedicated browser worker. Source-based collection suggestions work without downloading a model. Firebase Spark provides Google authentication and owner-isolated, revisioned Firestore snapshots. Vercel Hobby serves static assets only while this remains a personal, non-commercial project under Vercel's current terms.
 
 ## Optional online accounts
 
-1. Create a Supabase **Free** project. Apply `supabase/migrations/202609190001_library.sql`, then `supabase/migrations/202609190002_organization.sql`, using the SQL editor or Supabase CLI.
-2. Copy `.env.example` to `.env`. Set the public URL and anon/publishable key. Never use a service-role key in Vite variables.
-3. Configure Google OAuth in Google Cloud and Supabase. Google's callback is the Supabase `/auth/v1/callback` URL. Supabase's allowed app redirect is `https://YOUR-SITE.vercel.app/auth/callback`. Use exact origins, not production wildcards.
-4. Set `APP_ORIGIN` for the deletion function, deploy `supabase/functions/delete-account`, and verify bearer-token validation with a real account. Supabase supplies its service-role secret inside the function only.
+1. Use the `crate-a34ae` Firebase Spark project and deploy `firestore.rules`. Keep the release document closed until live verification is complete.
+2. Copy `.env.example` to `.env`. Set the Firebase web configuration. These values are public identifiers; never expose a service-account credential.
+3. Enable Google in Firebase Authentication, add `https://crate-nu-lilac.vercel.app` as an authorized domain, and verify a real account can sign in, sync its own library, and delete itself.
 5. Import the GitHub repository into a Vercel Hobby project, use `npm run build` with `dist` as the output directory, and use `vercel.json` for the SPA fallback and security headers. Preview and production use separate project keys. Do not start a paid plan, trial, or paid overages. Reconfirm Vercel's personal/non-commercial Hobby eligibility immediately before public release.
-6. Complete the public release checks in OPERATIONS.md. New cloud library activation is **closed by default**. Once checks pass, an operator may run `update public.release_config set accepting=true where id=true;`. Ten active libraries are allowed initially.
+5. Complete the public release checks in OPERATIONS.md. New cloud library activation is **closed by default**. Do not open the Firestore release gate until rules and real-account tests pass.
 
 Device-only data is not silently uploaded when you sign in. Export the local library, sign in, then restore the backup to transfer it deliberately. Signing out of an online account clears its local cache; pending changes must first sync or be exported and explicitly resolved.
 
@@ -44,7 +43,7 @@ Array-based Instagram saved JSON preview, malformed-entry report, canonical dupl
 
 ## Honest limits
 
-Organization and related search run on the user's device. Keep the browser open while working; cached completed work resumes on another run. Initial smarter search downloads a 118,308,185-byte model plus tokenizer/runtime files. Slow phones may take significant time. No server-side AI, generative summaries, email delivery, Instagram retrieval, media thumbnails, or autonomous background completion is promised. No caption means no guessed topic. Supabase Free can pause after inactivity and has no paid backup guarantee. Provider free-tier terms and limits can change; operators must review them before release.
+Organization and related search run on the user's device. Keep the browser open while working; cached completed work resumes on another run. Initial smarter search downloads a 118,308,185-byte model plus tokenizer/runtime files. Slow phones may take significant time. No server-side AI, generative summaries, email delivery, Instagram retrieval, media thumbnails, or autonomous background completion is promised. No caption means no guessed topic. Firebase Spark limits and terms can change; operators must review them before release.
 
 ## Status
 

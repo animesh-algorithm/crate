@@ -1547,7 +1547,7 @@ export function Info({ type }: { type: "help" | "privacy" | "terms" }) {
             Your original upload stays on your device. Crate reads the captions,
             creator names, hashtags, links, and dates in it. A device-only
             library stays in browser storage. An online account stores this
-            normalized text, your notes, and organization privately in Supabase.
+            normalized text, your notes, and organization privately in Firebase.
           </p>
           <h2>Smarter search</h2>
           <p>
@@ -1557,7 +1557,7 @@ export function Info({ type }: { type: "help" | "privacy" | "terms" }) {
           </p>
           <h2>Accounts</h2>
           <p>
-            Google and Supabase process sign-in information. Private library
+            Google and Firebase process sign-in information. Private library
             access is enforced by account ownership policies. This is not
             end-to-end encrypted storage. Crate uses no advertising, session
             replay, or analytics trackers.
