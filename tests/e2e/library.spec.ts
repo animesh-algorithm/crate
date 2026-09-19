@@ -178,7 +178,7 @@ test("moves out of an aggregated collection, merges, and undoes successive edits
     .selectOption("move");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.locator(".save-card")).toHaveCount(1);
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("link", { name: /For this weekend/ }).click();
   await page.getByRole("button", { name: "Edit collection" }).click();
   await page.getByLabel("Collection name").fill("One calm weekend");
@@ -204,7 +204,7 @@ test("moves out of an aggregated collection, merges, and undoes successive edits
   await expect(
     page.getByRole("button", { name: "Undo last change" }),
   ).toBeEnabled();
-  await page.goto("/");
+  await page.goto("/app");
   await expect(
     page.getByRole("link", { name: /For this weekend/ }),
   ).toBeVisible();
@@ -242,7 +242,7 @@ test("export and restore round-trip source and edits, and deletion clears undo h
     .getByRole("button", { name: "Restore library", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.goto("/");
+  await page.goto("/app");
   await expect(page.locator(".collection-tile")).toHaveCount(4);
   await page.goto("/save/demo0");
   await expect(
@@ -386,7 +386,7 @@ test("reel cards display a preview and open the player in a modal", async ({
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("link", { name: "Find connections" }).click();
   await page
     .getByRole("button", { name: "Use just the words", exact: true })

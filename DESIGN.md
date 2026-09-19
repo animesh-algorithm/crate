@@ -41,3 +41,9 @@ Empty library has one primary import action and a secondary sample-library actio
 120–180 ms controls, 200 ms hover settling. No persistent motion or fake processing animation. Honor prefers-reduced-motion. WCAG 2.2 AA goal: contrast, semantics, focus, keyboard, dialog containment, live progress, meaningful labels, 200% zoom, no horizontal overflow, and touch targets. Automated axe checks support but do not replace manual keyboard/mobile review. Test production compositions at 375/768/1024/1440 and the smallest supported viewport.
 
 Accessibility adjustment: purple collection surfaces use #8b5db9 beneath small white metadata; sage metadata uses #192216. These modest adjustments preserve the supplied palette while meeting checked text contrast.
+
+## Marketing story
+
+The public route extends the same cream, purple, yellow, sage, cyan, paper, and condensed-type vocabulary into a more theatrical editorial composition. Its signature sequence moves a single `Bar Sera` card from a crowded save pile through clustering, vague search, and rediscovery. Torn masks, tape, imperfect rotations, hand-drawn marks, and local fictional photographs support that story without becoming application chrome.
+
+The marketing story uses three normal-flow illustrated chapters: Save, Sort, and Find. Code-native paper scraps, connecting lines, collection labels, and the fictional `Bar Sera` card carry the narrative without tying state to scroll position. Short one-time viewport entrances guide attention; scrolling itself only moves the page. Collections enter as a responsive editorial shelf, with native horizontal snap scrolling and an overflow cue on compact layouts. Reduced motion presents every chapter and collection immediately with no transforms. Primary controls remain at least 44px, focus stays visible, and the public page must remain usable at 200% zoom without horizontal document overflow.

@@ -1,17 +1,16 @@
-// Local production verification server: applies the same CSP as Pages.
+// Local production verification server: applies Vercel's configured headers.
 import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 const root = resolve("dist");
-const headerFile = await readFile("public/_headers", "utf8");
-const csp = headerFile
-  .split("\n")
-  .find((x) => x.trim().startsWith("Content-Security-Policy:"))
-  .trim()
-  .slice("Content-Security-Policy:".length)
-  .trim();
+const vercel = JSON.parse(await readFile("vercel.json", "utf8"));
+const configuredHeaders = Object.fromEntries(
+  vercel.headers
+    .find((entry) => entry.source === "/(.*)")
+    .headers.map(({ key, value }) => [key, value]),
+);
 
-console.log(csp);
+console.log(configuredHeaders["Content-Security-Policy"]);
 const types = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -22,6 +21,7 @@ const types = {
   ".woff": "font/woff",
   ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
+  ".webp": "image/webp",
 };
 http
   .createServer(async (req, res) => {
@@ -37,9 +37,8 @@ http
         file = root + "/index.html";
       }
       res.writeHead(200, {
+        ...configuredHeaders,
         "Content-Type": types[extname(file)] || "application/octet-stream",
-        "Content-Security-Policy": csp,
-        "X-Content-Type-Options": "nosniff",
         "Cache-Control": "no-store",
       });
       res.end(await readFile(file));

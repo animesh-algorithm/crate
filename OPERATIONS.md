@@ -42,3 +42,9 @@ No analytics, replay, private content/query logs, or inference traces. Provider 
 - https://firebase.google.com/docs/auth/web/google-signin
 - https://firebase.google.com/docs/firestore/security/get-started
 - https://huggingface.co/docs/transformers.js/en/index
+
+## Route and asset deployment checks
+
+Before release, verify `/` serves the public story directly and `/app`, every `/app/*` deep link, legacy redirects, and `/auth/callback` survive a fresh production request through Vercel’s SPA fallback. Confirm redirect query strings and dynamic IDs in the deployed browser, not only the local router. A successful build or preview HTTP 200 is not proof that OAuth redirect handling or library restoration works.
+
+Inspect the deployed network log to confirm marketing images are served from the bundled `/marketing/*.webp` files and the landing route makes no third-party media, analytics, or personal-data requests. Recheck reduced motion, hidden-tab pausing, touch scrolling, 200% zoom, and 320/375/768/1024/1440 layouts against production headers. The library’s Instagram reel requests remain an explicit `/app` behavior and must not be mistaken for marketing traffic.

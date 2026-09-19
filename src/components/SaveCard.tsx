@@ -45,7 +45,7 @@ export function SaveCard({
       </div>
       <ReelPreview item={item} inline />
       <Link
-        to={`/save/${encodeURIComponent(item.id)}`}
+        to={`/app/save/${encodeURIComponent(item.id)}`}
         state={from}
         className="save-content"
       >
@@ -62,7 +62,7 @@ export function SaveCard({
             .join("  ") || "Saved for later"}
         </span>
         <Link
-          to={`/save/${encodeURIComponent(item.id)}`}
+          to={`/app/save/${encodeURIComponent(item.id)}`}
           state={from}
           className="circle small"
           aria-label={`Read save by ${item.creator}`}

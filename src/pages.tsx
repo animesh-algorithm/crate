@@ -113,7 +113,7 @@ export function Home({ onImport }: { onImport: () => void }) {
               className="text-button demo-link"
               onClick={async () => {
                 await startDemo();
-                navigate("/");
+                navigate("/app");
               }}
             >
               Take a look around first <ArrowUpRight size={16} />
@@ -146,7 +146,7 @@ export function Home({ onImport }: { onImport: () => void }) {
                 </h2>
               </div>
               <div className="heading-actions">
-                <Link className="text-button" to="/organize">
+                <Link className="text-button" to="/app/organize">
                   <Sparkles size={16} /> Find connections
                 </Link>
                 <button
@@ -170,7 +170,7 @@ export function Home({ onImport }: { onImport: () => void }) {
                   Your saves are here. Let’s find the things that belong
                   together.
                 </p>
-                <Link className="button purple" to="/organize">
+                <Link className="button purple" to="/app/organize">
                   Organize my library <ArrowRight size={17} />
                 </Link>
               </div>
@@ -182,7 +182,7 @@ export function Home({ onImport }: { onImport: () => void }) {
                 <span className="eyebrow">FRESH IN YOUR MIND</span>
                 <h2>Recently saved</h2>
               </div>
-              <Link className="text-button" to="/saves">
+              <Link className="text-button" to="/app/saves">
                 All your saves <ArrowUpRight size={17} />
               </Link>
             </div>
@@ -204,7 +204,7 @@ export function Home({ onImport }: { onImport: () => void }) {
               ? "A private library. A little more headspace."
               : "Your private library lives on this device."}
         </p>
-        <Link to="/help">
+        <Link to="/app/help">
           A little help <ArrowUpRight size={14} />
         </Link>
       </section>
@@ -217,7 +217,7 @@ function CollectionTile({ c, index }: { c: Collection; index: number }) {
     items = collectionItems(library, c.id).filter((x) => !x.archived);
   return (
     <Link
-      to={`/collection/${c.id}`}
+      to={`/app/collection/${c.id}`}
       className={`collection-tile composition-${c.style}`}
     >
       <div className="tile-top">
@@ -272,7 +272,7 @@ function Rediscovery() {
         <h2>Remember this one?</h2>
         <p>Good things deserve more than one glance.</p>
       </div>
-      <Link to={`/save/${chosen.id}`}>
+      <Link to={`/app/save/${chosen.id}`}>
         <span>@{chosen.creator}</span>
         <p>
           {chosen.captions[0]?.slice(0, 160) ||
@@ -426,7 +426,7 @@ export function Browse({ search = false }: { search?: boolean }) {
         <Link
           className="back"
           to={
-            c?.parentId ? `/collection/${encodeURIComponent(c.parentId)}` : "/"
+            c?.parentId ? `/app/collection/${encodeURIComponent(c.parentId)}` : "/app"
           }
         >
           <ArrowLeft size={17} />{" "}
@@ -461,7 +461,7 @@ export function Browse({ search = false }: { search?: boolean }) {
           {library.collections
             .filter((x) => x.parentId === c.id)
             .map((x) => (
-              <Link to={`/collection/${x.id}`} key={x.id}>
+              <Link to={`/app/collection/${x.id}`} key={x.id}>
                 {x.name} <ArrowUpRight size={16} />
               </Link>
             ))}
@@ -705,7 +705,7 @@ export function Browse({ search = false }: { search?: boolean }) {
               : "Your saves will appear here when you add them."
           }
           action={
-            <Link className="button quiet" to="/">
+            <Link className="button quiet" to="/app">
               Back to my library
             </Link>
           }
@@ -864,7 +864,7 @@ function BulkDialog({
 export function Detail() {
   const location = useLocation();
   const from =
-    typeof location.state?.from === "string" ? location.state.from : "/saves";
+    typeof location.state?.from === "string" ? location.state.from : "/app/saves";
   const { id } = useParams(),
     { library, change, busy } = useLibrary(),
     navigate = useNavigate(),
@@ -884,7 +884,7 @@ export function Detail() {
         title="This save isn’t here."
         description="It may have been removed, or belong to another library."
         action={
-          <Link to="/" className="button quiet">
+          <Link to="/app" className="button quiet">
             Your library
           </Link>
         }
@@ -905,11 +905,11 @@ export function Detail() {
     <div className="detail-page">
       <Link className="back" to={from}>
         <ArrowLeft size={18} />{" "}
-        {from.startsWith("/collection")
+        {from.startsWith("/app/collection")
           ? "Back to collection"
-          : from.startsWith("/search")
+          : from.startsWith("/app/search")
             ? "Back to search"
-            : from === "/"
+            : from === "/app"
               ? "Your library"
               : "All your saves"}
       </Link>
@@ -957,7 +957,7 @@ export function Detail() {
           )}
           <div className="hashtags">
             {item.hashtags.map((tag, i) => (
-              <Link key={i} to={`/search?q=${encodeURIComponent(tag)}`}>
+              <Link key={i} to={`/app/search?q=${encodeURIComponent(tag)}`}>
                 {tag.startsWith("#") ? tag : "#" + tag}
               </Link>
             ))}
@@ -1160,7 +1160,7 @@ export function Detail() {
                 items: l.items.filter((x) => x.id !== item.id),
                 tombstones: [...new Set([...l.tombstones, item.id])],
               }));
-              navigate("/saves");
+              navigate("/app/saves");
             }}
           >
             Remove this save
@@ -1428,11 +1428,11 @@ export function Settings() {
             Free to use, with room for up to 5,000 saves. Smarter search runs on
             your device. No advertising or tracking cookies.
           </p>
-          <Link className="text-button" to="/privacy">
+          <Link className="text-button" to="/app/privacy">
             Privacy
           </Link>{" "}
           ·{" "}
-          <Link className="text-button" to="/terms">
+          <Link className="text-button" to="/app/terms">
             Terms
           </Link>
         </section>
@@ -1485,7 +1485,7 @@ export function Settings() {
 export function Info({ type }: { type: "help" | "privacy" | "terms" }) {
   return (
     <article className="prose">
-      <Link className="back" to="/">
+      <Link className="back" to="/app">
         <ArrowLeft size={17} /> Your library
       </Link>
       <h1>

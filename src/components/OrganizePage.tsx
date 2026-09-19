@@ -241,7 +241,7 @@ export function OrganizePage() {
   return (
     <div className="organize-page">
       <header className="organize-header">
-        <Link to="/" className="text-button">
+        <Link to="/app" className="text-button">
           ← Your library
         </Link>
         <span className="eyebrow">A PLACE FOR WHAT YOU KEEP</span>
@@ -258,7 +258,7 @@ export function OrganizePage() {
       {!library.items.length && (
         <p className="review-warning" role="status">
           There are no saves in this library to sort yet.{" "}
-          <Link to="/">Bring in your saves or try the sample library</Link>{" "}
+          <Link to="/app">Bring in your saves or try the sample library</Link>{" "}
           first, then come back to find matches for your categories.
         </p>
       )}

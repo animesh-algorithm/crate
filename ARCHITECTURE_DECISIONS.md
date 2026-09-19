@@ -11,7 +11,7 @@ Confirmed product decisions are in SPEC.md. Defaults introduced by the $0 constr
 | 005 | Google-only auth, no transactional email                        | Accepted $0 default                               |
 | 006 | Capacity-bounded launch, explicit free-service limitations      | Accepted; public activation requires verification |
 | 012 | Vercel Hobby replaces Cloudflare Pages for static hosting       | Accepted; eligibility gate added                  |
-| 013 | Firebase Auth and Firestore replace Supabase cloud services    | Accepted; online activation remains closed        |
+| 013 | Firebase Auth and Firestore replace Supabase cloud services     | Accepted; online activation remains closed        |
 
 The prior Cloudflare Workers Paid/D1/R2/Queues/Vectorize/OpenAI/Resend architecture is superseded. Prior no-training provider requirements are satisfied more strongly for inference content by processing entirely on-device; authentication and normalized online storage still have their own processors. The original monthly AI allowance and full-refresh restriction disappear because no metered AI calls exist.
 
@@ -48,3 +48,13 @@ Accepted user decision, 2026-09-19; supersedes ADR-001 and the Supabase-specific
 Firestore rules isolate every `/users/{uid}` library path to its authenticated owner. A small manifest holds the active snapshot revision; snapshot chunks hold source-preserving library state. The browser writes chunks before atomically advancing the manifest revision, preserving explicit conflicts while avoiding Firestore's per-document size ceiling. New online-library creation remains denied until the operator changes the release gate.
 
 No Cloud Functions, paid billing, Firebase hosting, service-account credential, deletion ledger, or server-side personal-data processor is introduced. Account deletion deletes the caller's Firestore snapshots and manifest, then that same active Firebase Authentication account; recent-login requirements may require another sign-in. Rule deployment and live authenticated create/read/update/delete verification remain release gates.
+
+## ADR-014: Public story separated from the library
+
+Accepted user direction, 2026-09-19. `/` is the public marketing surface and `/app/*` is the functional library. The route split is lazy so the marketing-only Motion dependency, choreography, and styles do not enter the library chunk. The shared provider can initialize in parallel, but the public story never blocks on library loading. Existing library URLs redirect compatibly with query strings and dynamic IDs preserved; Firebase redirect completion remains the authority before `/auth/callback` enters `/app`.
+
+Marketing demonstrations are intentionally ephemeral. They use one continuous DOM representation of the fictional Bar Sera save, component-only search and drag state, and bundled responsive WebP assets generated for Crate. They do not access storage, alter personal libraries, fetch third-party media, add analytics, or change account isolation. Reduced-motion, compact-touch, low-end-device, and hidden-tab behavior are part of this boundary rather than optional polish.
+
+## ADR-015: Illustration-led marketing chapters
+
+Accepted user direction, 2026-09-19; supersedes ADR-014's scroll-choreographed story implementation while preserving its route and privacy boundaries. The public story uses three normal-flow, code-native illustrated chapters with one-time viewport entrance motion. Page scroll never controls story state, card position, or collection progression. The collection shelf is a responsive grid on wide layouts and native horizontal snap scrolling on compact layouts. Reduced-motion and low-end-device modes render the complete composition without entrance transforms. No new remote media, runtime request, or persisted state is introduced.

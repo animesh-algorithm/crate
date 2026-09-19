@@ -4,7 +4,13 @@ import { Modal, download } from "./UI";
 import { useLibrary } from "../lib/store";
 import { type Preview, previewCounts, commitImport } from "../lib/import";
 import { MAX_FILE_BYTES } from "../lib/model";
-export function ImportDialog({ onClose }: { onClose: () => void }) {
+export function ImportDialog({
+  onClose,
+  onImported,
+}: {
+  onClose: () => void;
+  onImported?: () => void;
+}) {
   const { library, change, busy } = useLibrary(),
     [preview, setPreview] = useState<Preview | null>(null),
     [name, setName] = useState(""),
@@ -175,6 +181,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                 try {
                   await change((l) => commitImport(l, preview, name));
                   onClose();
+                  onImported?.();
                 } catch (e) {
                   setError(
                     e instanceof Error ? e.message : "Import could not finish.",

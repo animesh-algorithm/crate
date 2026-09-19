@@ -146,7 +146,7 @@ export function CollectionDialog({
             onClick={async () => {
               try {
                 await change((l) => mergeCollections(l, collection.id, merge));
-                navigate(`/collection/${merge}`);
+                navigate(`/app/collection/${merge}`);
                 onClose();
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Could not merge.");
@@ -166,7 +166,7 @@ export function CollectionDialog({
               disabled={busy}
               onClick={async () => {
                 await change((l) => withoutCollection(l, collection.id));
-                navigate("/");
+                navigate("/app");
                 onClose();
               }}
             >
