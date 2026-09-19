@@ -9,6 +9,7 @@ import {
 import type { User } from "firebase/auth";
 import {
   cloud,
+  finishSignInRedirect,
   listenAuth,
   readCloud,
   writeCloud,
@@ -68,6 +69,10 @@ export function Provider({ children }: { children: ReactNode }) {
     }
     const unsubscribe = listenAuth((nextUser) => {
       setUser(nextUser);
+      setLoading(false);
+    });
+    void finishSignInRedirect().catch(() => {
+      setError("Sign-in could not finish. Please try again.");
       setLoading(false);
     });
     return unsubscribe;

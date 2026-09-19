@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   deleteUser,
   getAuth,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -70,6 +71,10 @@ async function deleteSnapshot(uid: string, snapshotId: string) {
 
 export function listenAuth(callback: (user: User | null) => void) {
   return auth ? onAuthStateChanged(auth, callback) : () => undefined;
+}
+/** Complete Firebase's redirect handoff before relying on the auth observer. */
+export async function finishSignInRedirect() {
+  if (auth) await getRedirectResult(auth);
 }
 export async function signIn() {
   if (!auth) throw Error("Online accounts are not configured on this installation.");
