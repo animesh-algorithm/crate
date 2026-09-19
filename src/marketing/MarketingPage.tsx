@@ -4,14 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowDown,
   ArrowRight,
-  ArrowUpRight,
   Check,
   MoveRight,
   RotateCcw,
   Search,
 } from "lucide-react";
-import { ImportDialog } from "../components/ImportDialog";
-import { useLibrary } from "../lib/store";
 import { isLowEndDevice, marketingMotion } from "./motion";
 import "./marketing.css";
 
@@ -32,14 +29,8 @@ const chapterMotion = {
 };
 
 export default function MarketingPage() {
-  const { library, demo, user, loading, startDemo } = useLibrary();
   const navigate = useNavigate();
-  const [importing, setImporting] = useState(false);
-  const returning = !loading && Boolean(library.items.length || demo || user);
-  const enterSample = async () => {
-    await startDemo();
-    navigate("/app");
-  };
+  const enterApp = () => navigate("/app");
   return (
     <div className="marketing-page">
       <a href="#marketing-main" className="skip-link">
@@ -56,31 +47,16 @@ export default function MarketingPage() {
         </Link>
         <div className="marketing-nav-actions">
           <a href="#how-it-works">How it works</a>
-          {returning && (
-            <Link className="button quiet" to="/app">
-              Open Crate
-            </Link>
-          )}
-          <button className="button purple" onClick={() => setImporting(true)}>
-            Add my saves
-          </button>
+          <Link className="button purple" to="/app">Organize my saves</Link>
         </div>
       </header>
       <main id="marketing-main">
-        <Hero
-          onImport={() => setImporting(true)}
-          onSample={enterSample}
-          returning={returning}
-        />
+        <Hero onEnter={enterApp} />
         <Story />
         <Shelf />
         <SearchDemo />
         <DragDemo />
-        <Finale
-          onImport={() => setImporting(true)}
-          onSample={enterSample}
-          returning={returning}
-        />
+        <Finale />
       </main>
       <footer className="marketing-footer">
         <Link to="/" className="brand">
@@ -92,30 +68,16 @@ export default function MarketingPage() {
           <Link to="/app/help">Help</Link>
         </div>
       </footer>
-      {importing && (
-        <ImportDialog
-          onClose={() => setImporting(false)}
-          onImported={() => navigate("/app")}
-        />
-      )}
     </div>
   );
 }
 
-function Hero({
-  onImport,
-  onSample,
-  returning,
-}: {
-  onImport: () => void;
-  onSample: () => void;
-  returning: boolean;
-}) {
+function Hero({ onEnter }: { onEnter: () => void }) {
   const reduce = useReducedMotion();
   return (
     <section className="marketing-hero">
       <div className="hero-copy">
-        <p className="marketing-kicker">YOUR SAVES, OUT OF THE SCROLL</p>
+        <p className="marketing-kicker">CRATE FOR INSTAGRAM SAVES</p>
         <motion.h1
           initial={reduce ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,25 +91,17 @@ function Hero({
           <em>for a reason.</em>
         </motion.h1>
         <p className="marketing-lede">
-          Crate turns the things you meant to remember into a private library
-          you can actually find again.
+          Crate turns your Instagram saves into a private library you can
+          search, review, and make your own.
         </p>
         <div className="hero-actions">
-          <button className="button purple" onClick={onImport}>
-            Bring in my saves <ArrowRight size={18} />
+          <button className="button purple" onClick={onEnter}>
+            Organize my saves <ArrowRight size={18} />
           </button>
-          <button className="scribble-link" onClick={onSample}>
-            Take a look around first <ArrowUpRight size={17} />
-          </button>
-          {returning && (
-            <Link className="open-crate" to="/app">
-              Go to my library <ArrowRight size={17} />
-            </Link>
-          )}
         </div>
         <p className="hero-privacy">
-          <Check size={15} /> Your file is read in your browser. Keep this tab
-          open while it imports.
+          <Check size={15} /> Sign in with Google. Crate never asks for your
+          Instagram password.
         </p>
       </div>
       <div className="hero-collage" aria-hidden="true">
@@ -601,39 +555,25 @@ function DragDemo() {
   );
 }
 
-function Finale({
-  onImport,
-  onSample,
-  returning,
-}: {
-  onImport: () => void;
-  onSample: () => void;
-  returning: boolean;
-}) {
+function Finale() {
   return (
     <section className="marketing-finale">
-      <div className="finale-star" aria-hidden="true">
-        ✳
+      <div className="finale-heading">
+        <p className="marketing-kicker">FROM EXPORT TO YOUR OWN LIBRARY</p>
+        <h2>
+          Three steps.<br /><em>Then it’s yours.</em>
+        </h2>
       </div>
-      <p className="marketing-kicker">KEEP THE GOOD STUFF</p>
-      <h2>
-        Less scrolling.
-        <br />
-        <em>More finding.</em>
-      </h2>
-      <p>Bring your saved_posts.json. Crate handles it here in your browser.</p>
-      <div>
-        <button className="button purple" onClick={onImport}>
-          Start my Crate <ArrowRight size={18} />
-        </button>
-        <button className="scribble-link" onClick={onSample}>
-          Explore the sample
-        </button>
-        {returning && (
-          <Link className="scribble-link" to="/app">
-            Return to Crate
-          </Link>
-        )}
+      <div className="finale-path" aria-label="How to start using Crate">
+        <article><span>01</span><div className="finale-file" aria-hidden="true">JSON</div><h3>Export your saved posts</h3><p>Ask Instagram for Saved items and collections in JSON.</p></article>
+        <i aria-hidden="true"><ArrowRight /></i>
+        <article><span>02</span><div className="finale-drop" aria-hidden="true">DROP FILE</div><h3>Bring the file to Crate</h3><p>Review it in your browser before anything is added.</p></article>
+        <i aria-hidden="true"><ArrowRight /></i>
+        <article><span>03</span><div className="finale-cards" aria-hidden="true"><b>PLACES</b><b>RECIPES</b></div><h3>Review your collections</h3><p>Save the suggestions that feel right. Leave the rest for later.</p></article>
+      </div>
+      <div className="finale-action">
+        <p>Less scrolling. More finding.</p>
+        <Link className="button purple" to="/app">Organize my saves <ArrowRight size={18} /></Link>
       </div>
     </section>
   );

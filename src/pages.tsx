@@ -42,9 +42,12 @@ import { Semantic, sourceHash } from "./lib/semantic";
 import { SaveCard } from "./components/SaveCard";
 import { Empty, Modal, download } from "./components/UI";
 import { CollectionDialog } from "./components/CollectionDialog";
+import { groupId } from "./lib/organize";
+import type { ProposalDraft } from "./lib/db";
 export function Home({ onImport }: { onImport: () => void }) {
-  const { library, demo, startDemo, user, loading } = useLibrary(),
-    [create, setCreate] = useState(false);
+  const { library, demo, user, loading, owner, admission } = useLibrary(),
+    [create, setCreate] = useState(false),
+    [draft, setDraft] = useState<ProposalDraft | null>(null);
   const collections = library.collections.filter((c) => !c.parentId),
     items = library.items.filter((x) => !x.archived),
     recent = [...items]
@@ -54,7 +57,11 @@ export function Home({ onImport }: { onImport: () => void }) {
           (a.timestamp || a.importedAt / 1000),
       )
       .slice(0, 4);
-  const navigate = useNavigate();
+  useEffect(() => {
+    let active = true;
+    void db.proposals.get(owner).then((value) => { if (active) setDraft(value || null); });
+    return () => { active = false; };
+  }, [owner, library.revision]);
   if (loading)
     return (
       <div className="page-loading" role="status">
@@ -94,46 +101,24 @@ export function Home({ onImport }: { onImport: () => void }) {
         </div>
       </section>
       {!library.items.length ? (
-        <section className="welcome">
-          <div>
-            <span className="eyebrow">START WITH WHAT YOU LOVE</span>
-            <h2>
-              Your saves have
-              <br />a place here.
-            </h2>
-            <p>
-              Bring your Instagram export. We’ll help you turn
-              <br />
-              “I saved that somewhere” into “here it is.”
-            </p>
-            <button className="button purple" onClick={onImport}>
-              Bring in my saves <ArrowRight size={18} />
-            </button>
-            <button
-              className="text-button demo-link"
-              onClick={async () => {
-                await startDemo();
-                navigate("/app");
-              }}
-            >
-              Take a look around first <ArrowUpRight size={16} />
-            </button>
-          </div>
-          <div className="welcome-art" aria-hidden="true">
-            <div className="art-paper">
-              <span>
-                A LITTLE
-                <br />
-                BIT OF
-              </span>
-              <b>everything.</b>
-              <span className="art-star">✳</span>
-            </div>
-            <div className="art-tag">KEEP THE GOOD STUFF ↗</div>
-          </div>
-        </section>
+        <ImportOnboarding onImport={onImport} available={demo || !user || admission === "open" || library.revision > 0} waiting={Boolean(user && admission === "unknown")} />
       ) : (
         <>
+          {draft?.groups.length ? (
+            <section className="section suggested-home" aria-labelledby="suggested-home-title">
+              <div className="section-heading"><div><span className="eyebrow">READY WHEN YOU ARE</span><h2 id="suggested-home-title">Suggested Collections <span className="small-count">{draft.groups.length.toString().padStart(2, "0")}</span></h2></div><Link className="text-button" to="/app/organize">All suggestions <ArrowUpRight size={17} /></Link></div>
+              <p className="section-intro">Browse and search every suggestion. Save only the collections that feel useful; the rest stay here on this device.</p>
+              <div className="suggested-home-grid">
+                {draft.groups.slice(0, 4).map((group, index) => <Link key={groupId(group)} className={`suggested-home-card tone-${index % 4}`} to={`/app/suggested/${encodeURIComponent(groupId(group))}`}><span>{group.ids.length} SAVES · SUGGESTED</span><h3>{group.name}</h3><p>{group.description || "A possible home for things that belong together."}</p><ArrowUpRight size={20} /></Link>)}
+              </div>
+            </section>
+          ) : !collections.length ? (
+            <section className="organization-prompt">
+              <span className="eyebrow">YOUR SAVES ARE IN</span><h2>Now find the connections.</h2>
+              <p>The first smart run downloads about 120 MB and works on this device. Keep this browser open while Crate reviews your saves; you can pause safely.</p>
+              <Link className="button purple" to="/app/organize">Find my collections <ArrowRight size={17} /></Link>
+            </section>
+          ) : null}
           <section className="section">
             <div className="section-heading">
               <div>
@@ -211,6 +196,13 @@ export function Home({ onImport }: { onImport: () => void }) {
       {create && <CollectionDialog onClose={() => setCreate(false)} />}
     </>
   );
+}
+
+function ImportOnboarding({ onImport, available, waiting }: { onImport: () => void; available: boolean; waiting: boolean }) {
+  return <section className="import-onboarding" aria-labelledby="import-onboarding-title">
+    <div className="import-intro"><span className="eyebrow">START WITH YOUR INSTAGRAM EXPORT</span><h2 id="import-onboarding-title">Bring in your Instagram saves.</h2><p>Crate never asks for your Instagram password. Request the export yourself, then review the file here before anything is added.</p>{available ? <button className="button purple" onClick={onImport}>Choose saved_posts.json <ArrowRight size={18} /></button> : <div className="admission-closed" role="status"><strong>{waiting ? "Checking account availability…" : "New online libraries are not available right now."}</strong><span>Your account is signed in, but import stays closed until private storage has been verified and capacity is available.</span></div>}</div>
+    <div className="export-guide"><div className="export-guide-head"><span>INSTAGRAM · CURRENT EXPORT PATH</span><a href="https://about.fb.com/news/2023/10/manage-your-information-across-apps/" target="_blank" rel="noreferrer">Meta export help <ArrowUpRight size={15} /></a></div><ol><li><b>Open your Instagram profile</b><span>Tap the menu, then Accounts Center.</span></li><li><b>Open Your information and permissions</b><span>Choose Export your information.</span></li><li><b>Create an export</b><span>Select your Instagram profile, then Export to device.</span></li><li><b>Choose only your saved items</b><span>Select Saved or Saved items and collections.</span></li><li><b>Set All time and JSON</b><span>JSON is required for Crate to read the export.</span></li><li><b>Download and unzip</b><span>Choose saved_posts.json inside the saved folder.</span></li></ol><p>Instagram may change these labels between app versions. The file must be named <code>saved_posts.json</code>.</p></div>
+  </section>;
 }
 function CollectionTile({ c, index }: { c: Collection; index: number }) {
   const { library } = useLibrary(),
@@ -296,15 +288,23 @@ export function Browse({ search = false }: { search?: boolean }) {
     [semanticResults, setSemanticResults] = useState<Item[] | null>(null),
     [smartBusy, setSmartBusy] = useState(false),
     [smartError, setSmartError] = useState(""),
-    [smartNote, setSmartNote] = useState("");
+    [smartNote, setSmartNote] = useState(""),
+    [proposal, setProposal] = useState<ProposalDraft | null>(null);
   const query = params.get("q") || "",
     view = params.get("view") || "all",
+    scope = params.get("scope") || "all",
     layout = params.get("layout") || "grid",
     sort = params.get("sort") || "newest";
   const [inputQuery, setInputQuery] = useState(query);
   useEffect(() => setInputQuery(query), [query]);
   const c = library.collections.find((c) => c.id === id);
   const smart = useRef<Semantic | null>(null);
+  useEffect(() => {
+    let active = true;
+    void db.proposals.get(owner).then((value) => { if (active) setProposal(value || null); });
+    return () => { active = false; };
+  }, [owner, library.revision]);
+  const suggestedIds = useMemo(() => new Set((proposal?.groups || []).flatMap((group) => group.ids)), [proposal]);
   useEffect(() => () => smart.current?.cancel(), []);
   useEffect(() => {
     setSemanticResults(null);
@@ -352,8 +352,10 @@ export function Browse({ search = false }: { search?: boolean }) {
       result = result.filter((x) =>
         x.collections.includes(params.get("collection")!),
       );
+    if (search && scope === "saved") result = result.filter((x) => x.collections.length > 0);
+    if (search && scope === "suggested") result = result.filter((x) => suggestedIds.has(x.id));
     return result;
-  }, [library, id, view, params]);
+  }, [library, id, view, params, search, scope, suggestedIds]);
   const results = useMemo(() => {
     const found = semanticResults
       ? semanticResults.filter((i) => filtered.some((x) => x.id === i.id))
@@ -613,6 +615,7 @@ export function Browse({ search = false }: { search?: boolean }) {
           </button>
         </div>
       )}
+      {search && <div className="scope-tabs" aria-label="Search scope">{["all", "saved", "suggested"].map((value) => <button key={value} className={scope === value ? "active" : ""} onClick={() => update("scope", value === "all" ? "" : value)}>{value === "all" ? "All saves" : value === "saved" ? "Saved collections" : "Suggested collections"}</button>)}</div>}
       <div className="browse-toolbar">
         <div className="tabs">
           {!id &&
@@ -693,6 +696,7 @@ export function Browse({ search = false }: { search?: boolean }) {
                   s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
                 )
               }
+              badges={search ? [item.collections.length ? "Saved" : "", suggestedIds.has(item.id) ? "Suggested" : ""].filter(Boolean) : []}
             />
           ))}
         </div>
@@ -1188,11 +1192,13 @@ export function Settings() {
       deleteLibrary,
       exitDemo,
       setError,
+      admission,
     } = useLibrary(),
     [remove, setRemove] = useState(""),
     [confirm, setConfirm] = useState("");
   const restore = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const canCreateOnlineLibrary = !user || admission === "open" || library.revision > 0;
   return (
     <>
       <div className="page-title">
@@ -1296,6 +1302,8 @@ export function Settings() {
           </button>
           <button
             className="text-button restore-link"
+            disabled={!canCreateOnlineLibrary}
+            title={canCreateOnlineLibrary ? undefined : "New online libraries are not available right now"}
             onClick={() => restore.current?.click()}
           >
             Restore a Crate backup

@@ -96,14 +96,20 @@ test("review a draft on its own page, edit saves, and save one collection", asyn
       }
     };
   });
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await page.getByRole("link", { name: "Find connections" }).click();
   await expect(page).toHaveURL(/\/organize$/);
   await page.getByRole("button", { name: "Use just the words" }).click();
-  await expect(page.getByRole("button", { name: "Review Food" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Review Food" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("button", { name: "Review Food" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Review Food" })).toBeVisible();
+  await page.goto("/app");
+  await expect(page.getByRole("heading", { name: /Suggested Collections/ })).toBeVisible();
+  await page.goto("/app/search?scope=suggested&q=pasta");
+  await expect(page.getByRole("button", { name: "Suggested collections" })).toHaveClass(/active/);
+  await expect(page.locator(".save-card").first()).toBeVisible();
+  await page.goto("/app/organize");
   for (const width of [375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 950 });
     await expect(
@@ -130,8 +136,12 @@ test("review a draft on its own page, edit saves, and save one collection", asyn
   expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe(
     "BODY",
   );
-  await page.getByRole("button", { name: "Review Food" }).click();
+  await page.getByRole("link", { name: "Review Food" }).click();
   await expect(page.locator(".proposal-saves article")).toHaveCount(5);
+  const suggestionSearch = page.getByRole("textbox", { name: "Search this suggested collection" });
+  await suggestionSearch.fill("fresh tomato");
+  await expect(page.locator(".proposal-saves article")).toHaveCount(1);
+  await suggestionSearch.fill("");
   for (const width of [375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 950 });
     expect(
@@ -151,36 +161,30 @@ test("review a draft on its own page, edit saves, and save one collection", asyn
       fullPage: true,
     });
   }
+  await page.getByRole("button", { name: "Edit suggested collection" }).click();
   await page
     .getByRole("textbox", { name: "Collection name" })
     .fill("Sunday food");
-  await page
-    .getByRole("button", { name: "Remove from suggestion" })
-    .first()
-    .click();
+  await page.locator(".suggestion-item-menu summary").first().click();
+  await page.getByRole("button", { name: "Remove from suggestion" }).click();
   await expect(page.locator(".proposal-saves article")).toHaveCount(4);
   await page.reload();
-  await page.getByRole("button", { name: "Review Sunday food" }).click();
+  await expect(page.getByRole("heading", { name: "Sunday food" })).toBeVisible();
   await expect(page.locator(".proposal-saves article")).toHaveCount(4);
   await page.getByRole("button", { name: "Save collection" }).click();
   await expect(
-    page.getByRole("button", { name: "Review Design" }),
+    page.getByRole("link", { name: /Design/ }),
   ).toBeVisible();
   await expect(
-    page.getByText(/Your library has changed since this proposal/),
+    page.getByRole("link", { name: /Sunday food/ }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Review Sunday food" }),
-  ).toHaveCount(0);
-  await page.getByRole("link", { name: /Your library/ }).click();
-  await expect(page.getByRole("link", { name: /Sunday food/ })).toBeVisible();
 });
 
 test("custom categories stay exclusive and account-scoped", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await page.getByRole("link", { name: "Find connections" }).click();
   await page.getByRole("button", { name: "Use just the words" }).click();
   await expect(
@@ -223,12 +227,12 @@ test("custom categories stay exclusive and account-scoped", async ({
     .getByRole("button", { name: "Find saves for these categories" })
     .click();
   await expect(
-    page.getByRole("button", { name: "Review Pasta" }),
+    page.getByRole("link", { name: "Review Pasta" }),
   ).toBeVisible();
   await expect(page.locator(".suggestion-tile")).toHaveCount(1);
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Review Pasta" }),
+    page.getByRole("link", { name: "Review Pasta" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Start a new proposal" }).click();
   await page
@@ -243,9 +247,9 @@ test("custom categories stay exclusive and account-scoped", async ({
   await page.getByRole("button", { name: "Start my own" }).click();
   await page.goto("/organize");
   await expect(
-    page.getByRole("button", { name: "Use just the words" }),
+    page.getByRole("heading", { name: /Your Instagram saves/ }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Review Pasta" })).toHaveCount(
+  await expect(page.getByRole("link", { name: "Review Pasta" })).toHaveCount(
     0,
   );
 });
@@ -272,8 +276,8 @@ test("pausing grouping keeps the library unchanged and a later run can finish", 
       }
     };
   });
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await page.getByRole("link", { name: "Find connections" }).click();
   await page.getByRole("button", { name: "Use just the words" }).click();
   await expect(

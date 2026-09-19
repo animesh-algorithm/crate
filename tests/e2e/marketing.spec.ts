@@ -1,23 +1,26 @@
 import { test, expect, devices } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("landing page enters the sample, opens import, and preserves legacy routes", async ({
+test("landing page uses one CTA per section, enters the sample, and preserves legacy routes", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: /You saved it for a reason/ }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Bring in my saves" }).click();
-  await expect(
-    page.getByRole("dialog", { name: "Make room for your saves" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "Take a look around first" }).click();
+  await expect(page.locator(".marketing-nav").getByRole("link", { name: "Organize my saves" })).toHaveCount(1);
+  await expect(page.locator(".marketing-hero").getByRole("button", { name: "Organize my saves" })).toHaveCount(1);
+  await expect(page.locator(".marketing-finale").getByRole("link", { name: "Organize my saves" })).toHaveCount(1);
+  await page.locator(".marketing-hero").getByRole("button", { name: "Organize my saves" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByRole("heading", { name: /Your Instagram saves/ })).toBeVisible();
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page.getByRole("alert")).toContainText("Online accounts are not configured");
+  await page.getByRole("button", { name: "Explore a sample library" }).click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.locator(".collection-tile")).toHaveCount(4);
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Open Crate" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Crate" })).toHaveCount(0);
 
   for (const path of [
     "/search?q=pasta",

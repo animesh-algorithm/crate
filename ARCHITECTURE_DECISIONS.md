@@ -12,6 +12,7 @@ Confirmed product decisions are in SPEC.md. Defaults introduced by the $0 constr
 | 006 | Capacity-bounded launch, explicit free-service limitations      | Accepted; public activation requires verification |
 | 012 | Vercel Hobby replaces Cloudflare Pages for static hosting       | Accepted; eligibility gate added                  |
 | 013 | Firebase Auth and Firestore replace Supabase cloud services     | Accepted; online activation remains closed        |
+| 016 | Account-first onboarding and searchable device suggestions     | Accepted; live activation remains gated           |
 
 The prior Cloudflare Workers Paid/D1/R2/Queues/Vectorize/OpenAI/Resend architecture is superseded. Prior no-training provider requirements are satisfied more strongly for inference content by processing entirely on-device; authentication and normalized online storage still have their own processors. The original monthly AI allowance and full-refresh restriction disappear because no metered AI calls exist.
 
@@ -58,3 +59,9 @@ Marketing demonstrations are intentionally ephemeral. They use one continuous DO
 ## ADR-015: Illustration-led marketing chapters
 
 Accepted user direction, 2026-09-19; supersedes ADR-014's scroll-choreographed story implementation while preserving its route and privacy boundaries. The public story uses three normal-flow, code-native illustrated chapters with one-time viewport entrance motion. Page scroll never controls story state, card position, or collection progression. The collection shelf is a responsive grid on wide layouts and native horizontal snap scrolling on compact layouts. Reduced-motion and low-end-device modes render the complete composition without entrance transforms. No new remote media, runtime request, or persisted state is introduced.
+
+## ADR-016: Account-first onboarding and searchable device suggestions
+
+Accepted user direction, 2026-09-19. New personal libraries enter `/app` through Google authentication before Instagram import. Existing device-only libraries are grandfathered; migration is an explicit export, sign-in, and restore operation, never a silent owner change. Authenticated empty accounts read the operator release document and cannot import while admissions are closed. The server-side Firestore rule remains authoritative for first-library creation.
+
+Proposal drafts remain owner-keyed IndexedDB data and never join synchronized Library snapshots. The dashboard and `/app/suggested/:id` expose those groups as searchable Suggested Collections. Global `scope=all|saved|suggested` filtering deduplicates items and overlays draft membership without changing exact or related ranking. Saving one suggestion uses the existing source-preserving collection write and removes only that group from the draft.

@@ -2,8 +2,9 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 test("searches only after submission, without interrupting typing", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
+  await expect(page.locator(".collection-tile").first()).toBeVisible();
   await page.goto("/app/search");
   const input = page.getByRole("textbox", { name: "Search your saves" });
   await input.pressSequentially("recipe", { delay: 20 });

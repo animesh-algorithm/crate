@@ -12,6 +12,7 @@ import {
   finishSignInRedirect,
   listenAuth,
   readCloud,
+  readReleaseAdmission,
   writeCloud,
   deleteCloudAccount,
   signIn as signInCloud,
@@ -31,6 +32,8 @@ interface Store {
   demo: boolean;
   conflict: boolean;
   dirty: boolean;
+  hasLocalLibrary: boolean;
+  admission: "unknown" | "open" | "closed" | "unavailable";
   change: (fn: (l: Library) => Library) => Promise<void>;
   undo: () => Promise<void>;
   startDemo: () => Promise<void>;
@@ -56,6 +59,10 @@ export function Provider({ children }: { children: ReactNode }) {
     [notice, setNotice] = useState(""),
     [conflict, setConflict] = useState(false),
     [dirty, setDirty] = useState(false);
+  const [hasLocalLibrary, setHasLocalLibrary] = useState(false);
+  const [admission, setAdmission] = useState<Store["admission"]>(
+    cloud ? "unknown" : "unavailable",
+  );
   const current = useRef(library),
     base = useRef(emptyLibrary()),
     revision = useRef(0),
@@ -70,6 +77,11 @@ export function Provider({ children }: { children: ReactNode }) {
     const unsubscribe = listenAuth((nextUser) => {
       setUser(nextUser);
       setLoading(false);
+      if (!nextUser) setAdmission("unknown");
+      else
+        void readReleaseAdmission()
+          .then((open) => setAdmission(open ? "open" : "closed"))
+          .catch(() => setAdmission("closed"));
     });
     void finishSignInRedirect().catch(() => {
       setError("Sign-in could not finish. Please try again.");
@@ -91,6 +103,7 @@ export function Provider({ children }: { children: ReactNode }) {
         current.current = stored.data;
         setLibrary(stored.data);
         setDirty(stored.dirty);
+        setHasLocalLibrary(stored.exists);
         revision.current = stored.cloudRevision;
         base.current = stored.data;
         if (user && !demo) {
@@ -147,6 +160,7 @@ export function Provider({ children }: { children: ReactNode }) {
         Boolean(user && !demo),
         previous,
       );
+      if (owner === "local") setHasLocalLibrary(true);
       if (g !== generation.current) return;
       current.current = next;
       setLibrary(next);
@@ -372,6 +386,8 @@ export function Provider({ children }: { children: ReactNode }) {
         demo,
         conflict,
         dirty,
+        hasLocalLibrary,
+        admission,
         change,
         undo,
         startDemo,

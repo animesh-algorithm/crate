@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { MoreHorizontal, Pencil, Search } from "lucide-react";
 import { ReelPreview } from "./ReelPreview";
 import { db, type ProposalDraft } from "../lib/db";
 import { useLibrary } from "../lib/store";
@@ -14,6 +15,8 @@ import { textFor, type Category } from "../lib/model";
 
 export function OrganizePage() {
   const { library, owner, change, busy } = useLibrary();
+  const { id: routeSuggestionId } = useParams();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<ProposalDraft | null>(null);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -22,6 +25,8 @@ export function OrganizePage() {
   const [grouping, setGrouping] = useState(false);
   const [error, setError] = useState("");
   const [opened, setOpened] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [suggestionQuery, setSuggestionQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -37,8 +42,10 @@ export function OrganizePage() {
     const generation = ++loadGeneration.current;
     setDraft(null);
     void db.proposals.get(owner).then((value) => {
-      if (alive.current && generation === loadGeneration.current)
+      if (alive.current && generation === loadGeneration.current) {
         setDraft(value || null);
+        if (routeSuggestionId) setOpened(routeSuggestionId);
+      }
     });
     return () => {
       ++loadGeneration.current;
@@ -47,7 +54,7 @@ export function OrganizePage() {
       semantic.current?.cancel();
       stopGrouping.current?.();
     };
-  }, [owner]);
+  }, [owner, routeSuggestionId]);
   useEffect(
     () => setCategories(library.customCategories),
     [library.customCategories],
@@ -222,6 +229,7 @@ export function OrganizePage() {
       await change((l) => saveSuggestion(l, group));
       await updateGroups(groups.filter((g) => groupId(g) !== groupId(group)));
       setOpened(null);
+      if (routeSuggestionId) navigate("/app");
       setError("");
     } catch (e) {
       setError(
@@ -306,10 +314,14 @@ export function OrganizePage() {
           className="proposal-review"
           aria-label={`Review ${selected.name}`}
         >
-          <button className="text-button" onClick={() => setOpened(null)}>
+          <Link className="text-button" to="/app/organize">
             ← All suggestions
-          </button>
-          <div className="proposal-edit">
+          </Link>
+          <div className="suggestion-review-title">
+            <div><span className="eyebrow">SUGGESTED COLLECTION</span><h2>{selected.name}</h2><p>{selected.description || `${selected.ids.length} saves that may belong together.`}</p></div>
+            <button className="circle" aria-label="Edit suggested collection" aria-expanded={editing} onClick={() => setEditing(!editing)}><Pencil size={19} /></button>
+          </div>
+          {editing && <div className="proposal-edit compact-edit">
             <label>
               Collection name
               <input
@@ -326,7 +338,7 @@ export function OrganizePage() {
                 onChange={(e) => editGroup({ description: e.target.value })}
               />
             </label>
-          </div>
+          </div>}
           <p>
             {selected.ids.length
               ? `${selected.ids.length} saves. Open the original text below to decide what belongs here.`
@@ -349,10 +361,12 @@ export function OrganizePage() {
               collection stays untouched.
             </p>
           )}
+          <form className="suggestion-search" role="search" onSubmit={(event) => event.preventDefault()}><Search size={19} /><label className="sr-only" htmlFor="suggestion-search">Search this suggested collection</label><input id="suggestion-search" value={suggestionQuery} onChange={(event) => setSuggestionQuery(event.target.value)} placeholder="Search this suggested collection" /></form>
           <div className="proposal-saves">
             {selected.ids
               .map((id) => library.items.find((i) => i.id === id))
               .filter((x) => !!x)
+              .filter((item) => !suggestionQuery.trim() || textFor(item).toLocaleLowerCase().includes(suggestionQuery.trim().toLocaleLowerCase()))
               .map((item, index) => (
                 <article
                   key={item.id}
@@ -376,16 +390,7 @@ export function OrganizePage() {
                     {item.note && <p>{item.note}</p>}
                     <p>{[...item.hashtags, ...item.tags].join(" · ")}</p>
                   </details>
-                  <button
-                    className="text-button"
-                    onClick={() =>
-                      editGroup({
-                        ids: selected.ids.filter((x) => x !== item.id),
-                      })
-                    }
-                  >
-                    Remove from suggestion
-                  </button>
+                  <details className="suggestion-item-menu"><summary aria-label={`Edit ${item.creatorName || item.creator}`}><MoreHorizontal size={19} /></summary><button className="text-button" onClick={() => editGroup({ ids: selected.ids.filter((x) => x !== item.id) })}>Remove from suggestion</button></details>
                 </article>
               ))}
           </div>
@@ -529,12 +534,7 @@ export function OrganizePage() {
                       </p>
                     ))}
                 </div>
-                <button
-                  className="button quiet"
-                  onClick={() => setOpened(groupId(g))}
-                >
-                  Review {g.name}
-                </button>
+                <Link className="button quiet" to={`/app/suggested/${encodeURIComponent(groupId(g))}`}>Review {g.name}</Link>
               </article>
             ))}
           </div>

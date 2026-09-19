@@ -56,3 +56,7 @@ Read SPEC.md, DESIGN.md, ARCHITECTURE.md, and ARCHITECTURE_DECISIONS.md for the 
 `/` is Crate’s public marketing story. The private library, import state, sample banner, errors, and save status live under `/app`. The landing page can open the existing import dialog; a successful import and “Take a look around first” both continue to `/app`. Returning visitors can use “Open Crate.” Old library URLs redirect to their `/app/*` equivalents while preserving query strings and save or collection IDs.
 
 The marketing photographs and poster are bundled, fictional synthetic assets in `public/marketing`; they contain no personal exports, Instagram media, or runtime third-party requests. Marketing motion is route-local and honors reduced motion, compact touch layouts, low-end devices, and page visibility. No analytics or external service was added.
+
+The public story describes Crate as “for Instagram saves” and uses one conversion action: “Organize my saves.” New personal libraries enter through Google sign-in, then an in-app Instagram export guide and the existing preview/consent import. Existing device-only libraries remain available and are never uploaded automatically; users export a backup, sign in, and explicitly restore it if they want to migrate. The sample library remains available from the app entry screen.
+
+Suggested collections remain private device drafts until individually saved. They appear above saved collections on the dashboard, have searchable `/app/suggested/:id` views, and can also be included in global search with `scope=suggested`.

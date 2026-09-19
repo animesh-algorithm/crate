@@ -98,18 +98,22 @@ export function ImportDialog({
             <summary>Where do I find my export?</summary>
             <ol>
               <li>
-                In Instagram, open Accounts Center → Your information and
-                permissions.
+                Open your Instagram profile → menu → Accounts Center.
               </li>
               <li>
-                Choose Export your information, then select your Instagram
-                profile.
+                Choose Your information and permissions → Export your
+                information → Create export.
               </li>
               <li>
-                Select saved posts, export to your device, and choose JSON with
-                the full date range.
+                Select your Instagram profile → Export to device. Under
+                customized information, select Saved or Saved items and
+                collections.
               </li>
-              <li>Unzip the download and find saved/saved_posts.json.</li>
+              <li>Choose All time and JSON, then start the export.</li>
+              <li>
+                Download and unzip the archive. Choose saved_posts.json inside
+                the saved folder.
+              </li>
             </ol>
             <p>
               Instagram may change these labels. Crate currently supports the

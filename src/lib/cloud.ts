@@ -122,6 +122,11 @@ export async function readCloud() {
     revision,
   };
 }
+export async function readReleaseAdmission() {
+  if (!auth?.currentUser || !firestore) return false;
+  const release = await getDoc(doc(firestore, "config", "release"));
+  return release.exists() && release.data().accepting === true;
+}
 export async function writeCloud(next: Library, _base: Library, revision: number) {
   const user = auth?.currentUser;
   if (!user || !firestore) return revision;

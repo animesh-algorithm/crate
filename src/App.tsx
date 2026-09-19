@@ -22,7 +22,7 @@ function RouteMetadata() {
   useEffect(() => {
     const landing = pathname === "/";
     document.documentElement.dataset.surface = landing ? "marketing" : "app";
-    document.title = landing ? "Crate — Find the saves you meant to remember" : "Your library — Crate";
+    document.title = landing ? "Crate for Instagram saves — Find what you kept" : "Your library — Crate";
     document.querySelector('meta[name="description"]')?.setAttribute(
       "content",
       landing

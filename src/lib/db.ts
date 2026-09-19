@@ -52,8 +52,9 @@ export const db = new CrateDB();
 export async function loadLocal(owner: string) {
   const stored = await db.libraries.get(owner);
   return stored
-    ? { ...stored, data: validateLibrary(stored.data) }
+    ? { ...stored, exists: true, data: validateLibrary(stored.data) }
     : {
+        exists: false,
         id: owner,
         data: emptyLibrary(),
         cloudRevision: 0,

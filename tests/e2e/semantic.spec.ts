@@ -11,8 +11,8 @@ test("runs the pinned model locally and checkpoints normalized vectors", async (
   page.on("request", (r) => {
     if (r.url().includes("asyncify")) optionalBackendRequests.push(r.url());
   });
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await page.getByRole("link", { name: "Find connections" }).click();
   await page.getByRole("button", { name: "Find my interests" }).click();
   await expect(

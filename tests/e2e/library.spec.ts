@@ -34,8 +34,20 @@ const exported = [
 test("imports, searches, edits, persists, exports, and honors reimport removals", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Bring in my saves" }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
+  await expect(page.locator(".collection-tile").first()).toBeVisible();
+  await page.goto("/app/settings");
+  await page.getByRole("button", { name: "Delete library", exact: true }).click();
+  await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+  await page.getByRole("button", { name: "Permanently delete" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/app");
+  await expect(page.getByRole("heading", { name: "Bring in your Instagram saves." })).toBeVisible();
+  await expect(page.getByText("Accounts Center", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("Set All time and JSON", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Meta export help/ })).toHaveAttribute("href", /about\.fb\.com/);
+  await page.getByRole("button", { name: "Choose saved_posts.json" }).click();
   await page.locator("input[type=file]").setInputFiles({
     name: "saved_posts.json",
     mimeType: "application/json",
@@ -44,6 +56,7 @@ test("imports, searches, edits, persists, exports, and honors reimport removals"
   await expect(page.getByText("new saves", { exact: true })).toBeVisible();
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Add to my library" }).click();
+  await expect(page.getByRole("heading", { name: "Now find the connections." })).toBeVisible();
   await page.getByRole("link", { name: "All your saves" }).click();
   await page.getByRole("textbox", { name: "Search your saves" }).fill("pasta");
   await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -115,8 +128,8 @@ test("imports, searches, edits, persists, exports, and honors reimport removals"
 test("demo collection editing and responsive accessible navigation", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await expect(page.locator(".collection-tile")).toHaveCount(4);
   await page.getByRole("button", { name: "Create collection" }).click();
   await page.getByLabel("Collection name").fill("A weekend project");
@@ -150,8 +163,8 @@ test("demo collection editing and responsive accessible navigation", async ({
 test("moves out of an aggregated collection, merges, and undoes successive edits", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await page.getByRole("button", { name: "Create collection" }).click();
   await page.getByLabel("Collection name").fill("Deep breath");
   await page.getByLabel("Inside a collection").selectOption("demo-slow");
@@ -216,8 +229,8 @@ test("moves out of an aggregated collection, merges, and undoes successive edits
 test("export and restore round-trip source and edits, and deletion clears undo history", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Take a look around/ }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
   await expect(page.locator(".collection-tile")).toHaveCount(4);
   await page.goto("/settings");
   const event = page.waitForEvent("download");
@@ -229,8 +242,10 @@ test("export and restore round-trip source and edits, and deletion clears undo h
     .click();
   await page.getByLabel("Type DELETE to confirm").fill("DELETE");
   await page.getByRole("button", { name: "Permanently delete" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/app");
   await expect(
-    page.getByRole("button", { name: "Bring in my saves" }),
+    page.getByRole("button", { name: "Choose saved_posts.json" }),
   ).toBeVisible();
   await page.goto("/settings");
   await page.getByRole("button", { name: "Undo last change" }).click();
@@ -288,8 +303,16 @@ test("reel cards display a preview and open the player in a modal", async ({
       body: '<!doctype html><html lang="en"><head><title>Preview fixture</title></head><body><p>Instagram player fixture</p></body></html>',
     });
   });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Bring in my saves" }).click();
+  await page.goto("/app");
+  await page.getByRole("button", { name: /Explore a sample library/ }).click();
+  await expect(page.locator(".collection-tile").first()).toBeVisible();
+  await page.goto("/app/settings");
+  await page.getByRole("button", { name: "Delete library", exact: true }).click();
+  await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+  await page.getByRole("button", { name: "Permanently delete" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/app");
+  await page.getByRole("button", { name: "Choose saved_posts.json" }).click();
   await page.locator("input[type=file]").setInputFiles({
     name: "saved_posts.json",
     mimeType: "application/json",
@@ -392,7 +415,7 @@ test("reel cards display a preview and open the player in a modal", async ({
     .getByRole("button", { name: "Use just the words", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Review Recipes", exact: true })
+    .getByRole("link", { name: "Review Recipes", exact: true })
     .click();
   await page
     .locator(".proposal-saves")

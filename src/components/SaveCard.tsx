@@ -7,11 +7,13 @@ export function SaveCard({
   index = 0,
   selected,
   onSelect,
+  badges = [],
 }: {
   item: Item;
   index?: number;
   selected?: boolean;
   onSelect?: (id: string) => void;
+  badges?: string[];
 }) {
   const caption = item.captions[0];
   const location = useLocation();
@@ -20,6 +22,7 @@ export function SaveCard({
     <article
       className={`save-card tone-${index % 4} ${selected ? "selected" : ""}`}
     >
+      {badges.length > 0 && <div className="save-badges" aria-label="Collection status">{badges.map((badge) => <span key={badge}>{badge}</span>)}</div>}
       <div className="save-top">
         <span className="creator">
           <span className="creator-dot">{item.creator[0]?.toUpperCase()}</span>
