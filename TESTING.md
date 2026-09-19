@@ -1,5 +1,9 @@
 # Verification
 
+## Firebase authentication CSP correction, 2026-09-19
+
+The production policy now allows the single Google API script origin used by Firebase Google sign-in while retaining the same-origin default, restricted Firebase auth frame, and prohibition on general `unsafe-eval`. A configuration regression test checks those boundaries. `npm run check` passes with 23 tests and two private checks skipped; the Chromium suite passes ten tests with the opt-in model test skipped. This is local configuration evidence only. A fresh deployment and real Google account are still required to verify the response header and complete OAuth flow.
+
 ## Search input correction, 2026-09-19
 
 Search now runs only on Enter or the Search button, not during typing or after a pause. The regression test first failed against the prior delayed live search, then passed after removing automatic submission. It checks retained text/focus, explicit submission, reload persistence, mobile/desktop screenshots, horizontal overflow, and axe accessibility. `npm run check` passes (29 tests passed, two private checks skipped). The full Chromium suite passes ten tests with the opt-in model test skipped. This is local fixture evidence, not verification on the user's actual library or a deployed service.

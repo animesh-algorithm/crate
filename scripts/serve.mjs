@@ -10,6 +10,8 @@ const csp = headerFile
   .trim()
   .slice("Content-Security-Policy:".length)
   .trim();
+
+console.log(csp);
 const types = {
   ".html": "text/html",
   ".js": "text/javascript",
