@@ -1,5 +1,9 @@
 # Verification
 
+## Bounded Firestore snapshot window, 2026-09-19
+
+Firestore emulator regressions first demonstrated that an authenticated owner could allocate arbitrary parent IDs and leave unbounded historical chunk paths. The corrected rules expose only two alternating parent namespaces and 128 fixed chunk paths beneath each, fence staged writes by revision and random writer ID, reject stale-writer chunks and manifest updates, protect the active slot, and continue denying cross-owner and client release-document writes. Coverage also exercises interrupted-stage overwrite recovery, repeated slot reuse, deletion-guard cleanup, cross-tab writes after deletion starts, and malformed data. The client verifies parent metadata and a complete contiguous matching chunk set before decoding. `npm run test:rules` passes all thirteen emulator tests. This is local emulator evidence only; the rules were not deployed and production admission must remain closed until live verification succeeds.
+
 ## Admission-state and Firestore rule correction, 2026-09-19
 
 Unit coverage distinguishes a confirmed closed release from a failed availability check, keeping both fail-closed while offering retry only for the latter. Firestore emulator coverage verifies missing/closed admission denial, schema-valid open admission, owner isolation, existing-owner synchronization after admissions close, manifest revision increments, and malformed or oversized document rejection. The emulator is local evidence only; no rules or release document were deployed by this change, and production admission remains closed until the live release checklist passes.

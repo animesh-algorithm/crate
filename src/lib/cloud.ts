@@ -40,6 +40,10 @@ export const cloud = Boolean(auth && firestore);
 const chunkBytes = 180_000;
 const maxChunks = 128;
 
+function snapshotIdForRevision(revision: number) {
+  return `snapshot-${revision % 2}`;
+}
+
 function manifestRef(uid: string) {
   if (!firestore) throw Error("Cloud sync is not configured.");
   return doc(firestore, "users", uid, "library", "manifest");
@@ -47,6 +51,10 @@ function manifestRef(uid: string) {
 function snapshotsRef(uid: string) {
   if (!firestore) throw Error("Cloud sync is not configured.");
   return collection(manifestRef(uid), "snapshots");
+}
+function deletionRef(uid: string) {
+  if (!firestore) throw Error("Cloud sync is not configured.");
+  return doc(firestore, "users", uid, "library", "deletion");
 }
 function toBase64(bytes: Uint8Array) {
   let value = "";
@@ -105,12 +113,29 @@ export async function readCloud() {
   const manifest = await getDoc(manifestRef(user.uid));
   if (!manifest.exists()) return { library: emptyLibrary(), revision: 0 };
   const data = manifest.data(), snapshotId = data.snapshotId as string | undefined;
+  const snapshotWriterId = data.snapshotWriterId as string | undefined;
   const revision = Number(data.revision || 0);
   if (!snapshotId) return { library: emptyLibrary(), revision };
-  const chunks = await getDocs(collection(doc(snapshotsRef(user.uid), snapshotId), "chunks"));
+  const snapshot = doc(snapshotsRef(user.uid), snapshotId);
+  const snapshotDocument = await getDoc(snapshot);
+  if (!snapshotDocument.exists()) throw Error("Cloud snapshot is incomplete.");
+  const snapshotData = snapshotDocument.data();
+  const chunkCount = Number(snapshotData.chunkCount || 0);
+  if (!Number.isInteger(chunkCount) || chunkCount < 1 || chunkCount > maxChunks)
+    throw Error("Cloud snapshot is incomplete.");
+  if (
+    snapshotWriterId &&
+    (Number(snapshotData.revision || 0) !== revision || snapshotData.writerId !== snapshotWriterId)
+  ) throw Error("Cloud snapshot is incomplete.");
+  const chunks = await getDocs(collection(snapshot, "chunks"));
   const ordered = chunks.docs
-    .map((entry) => entry.data() as { index: number; data: string })
+    .map((entry) => entry.data() as { revision?: number; writerId?: string; index: number; data: string })
+    .filter((entry) => !snapshotWriterId || (
+      entry.revision === revision && entry.writerId === snapshotWriterId && entry.index < chunkCount
+    ))
     .sort((a, b) => a.index - b.index);
+  if (ordered.length !== chunkCount || ordered.some((entry, index) => entry.index !== index))
+    throw Error("Cloud snapshot is incomplete.");
   const pieces = ordered.map((entry) => fromBase64(entry.data));
   const joined = new Uint8Array(pieces.reduce((size, entry) => size + entry.length, 0));
   let offset = 0;
@@ -131,45 +156,66 @@ export async function readReleaseAdmission() {
 export async function writeCloud(next: Library, _base: Library, revision: number) {
   const user = auth?.currentUser;
   if (!user || !firestore) return revision;
-  const bytes = new TextEncoder().encode(JSON.stringify(next)), snapshotId = crypto.randomUUID();
+  const current = await getDoc(manifestRef(user.uid));
+  const currentRevision = current.exists() ? Number(current.data().revision || 0) : 0;
+  if (currentRevision !== revision) throw Error("REVISION_CONFLICT");
+  const bytes = new TextEncoder().encode(JSON.stringify(next));
+  const snapshotId = snapshotIdForRevision(revision + 1);
+  const writerId = crypto.randomUUID();
   const snapshot = doc(snapshotsRef(user.uid), snapshotId);
   const chunks = Array.from({ length: Math.ceil(bytes.length / chunkBytes) || 1 }, (_, index) =>
     toBase64(bytes.subarray(index * chunkBytes, (index + 1) * chunkBytes)),
   );
   if (chunks.length > maxChunks) throw Error("This library is too large to sync safely. Export a backup and remove some saves before retrying.");
-  await setDoc(snapshot, { chunkCount: chunks.length, createdAt: serverTimestamp() });
+  await setDoc(snapshot, {
+    revision: revision + 1,
+    writerId,
+    chunkCount: chunks.length,
+    createdAt: serverTimestamp(),
+  });
   for (let index = 0; index < chunks.length; index += 400) {
     const batch = writeBatch(firestore);
     chunks.slice(index, index + 400).forEach((data, offset) =>
-      batch.set(doc(snapshot, "chunks", String(index + offset)), { index: index + offset, data }),
+      batch.set(doc(snapshot, "chunks", String(index + offset)), {
+        revision: revision + 1,
+        writerId,
+        index: index + offset,
+        data,
+      }),
     );
     await batch.commit();
   }
-  let oldSnapshot = "";
-  try {
-    await runTransaction(firestore, async (transaction) => {
-      const current = await transaction.get(manifestRef(user.uid));
-      const currentRevision = current.exists() ? Number(current.data().revision || 0) : 0;
-      if (currentRevision !== revision) throw Error("REVISION_CONFLICT");
-      oldSnapshot = current.exists() ? String(current.data().snapshotId || "") : "";
-      transaction.set(manifestRef(user.uid), {
-        revision: revision + 1,
-        snapshotId,
-        updatedAt: serverTimestamp(),
-      });
+  await runTransaction(firestore, async (transaction) => {
+    const latest = await transaction.get(manifestRef(user.uid));
+    const latestRevision = latest.exists() ? Number(latest.data().revision || 0) : 0;
+    if (latestRevision !== revision) throw Error("REVISION_CONFLICT");
+    transaction.set(manifestRef(user.uid), {
+      revision: revision + 1,
+      snapshotId,
+      snapshotWriterId: writerId,
+      updatedAt: serverTimestamp(),
     });
-  } catch (error) {
-    await deleteSnapshot(user.uid, snapshotId);
-    throw error;
-  }
-  if (oldSnapshot) void deleteSnapshot(user.uid, oldSnapshot);
+  });
   return revision + 1;
 }
 export async function deleteCloudAccount() {
   const user = auth?.currentUser;
   if (!user || !firestore) return;
+  const deletion = deletionRef(user.uid);
+  const existingDeletion = await getDoc(deletion);
+  if (existingDeletion.exists()) {
+    if (existingDeletion.data().blocked !== true) throw Error("Account deletion could not be verified.");
+  } else {
+    try {
+      await setDoc(deletion, { blocked: true });
+    } catch (error) {
+      const concurrentDeletion = await getDoc(deletion);
+      if (!concurrentDeletion.exists() || concurrentDeletion.data().blocked !== true) throw error;
+    }
+  }
   const snapshots = await getDocs(snapshotsRef(user.uid));
-  for (const snapshot of snapshots.docs) await deleteSnapshot(user.uid, snapshot.id);
+  const snapshotIds = new Set(["snapshot-0", "snapshot-1", ...snapshots.docs.map((entry) => entry.id)]);
+  for (const snapshotId of snapshotIds) await deleteSnapshot(user.uid, snapshotId);
   await deleteDoc(manifestRef(user.uid));
   await deleteUser(user);
 }

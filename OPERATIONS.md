@@ -8,7 +8,7 @@
 - Publish operator name, privacy contact, and jurisdiction-appropriate terms. The repository contains product policy text, not a claim of legal review.
 - Verify `vercel.json` response headers and SPA deep links in the deployed site, OAuth callback refresh, user session restoration, mobile navigation, cross-device conflicts, and export/restore.
 - Measure model execution on representative phones/desktops and organization quality against private owner-reviewed examples. Never commit those examples.
-- Establish encrypted manual exports and recovery. Firestore has no operator-managed deletion ledger in this $0 client-only architecture. Rehearse restore before activation.
+- Establish encrypted manual exports and recovery. Account deletion retains only an immutable UID-scoped `{blocked:true}` guard; recovery must honor it and must never restore library content below a blocked UID. Rehearse restore before activation.
 - Once verified, create the operator-owned `/config/release` document with `accepting: true`. Existing libraries remain readable, writable, and deletable when admissions later close.
 
 ## Free-tier headroom
@@ -23,7 +23,7 @@ Model/download failure: exact search/manual browsing remain usable; retry later.
 
 ## Backups and deletion
 
-Make protected manual exports periodically and before migration. Encrypt at rest; operator-controlled offline storage, no public artifacts. Retain at most 30 days. Before restoring access, confirm it does not reintroduce an account the user deleted; client-only Firebase deletion does not create a server-side ledger. Account deletion removes its known Firestore snapshots before the active Firebase Authentication record. Offline device caches cannot be remotely guaranteed erased; the policy says so.
+Make protected manual exports periodically and before migration. Encrypt at rest; operator-controlled offline storage, no public artifacts. Retain at most 30 days. Before restoring access, check the immutable UID-scoped deletion guard and never reintroduce content for a blocked account. Account deletion retains only that content-free guard, removes known Firestore snapshots and the manifest, then removes the active Firebase Authentication record. Offline device caches cannot be remotely guaranteed erased; the policy says so.
 
 ## Release and rollback
 

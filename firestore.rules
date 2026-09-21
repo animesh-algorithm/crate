@@ -11,50 +11,114 @@ service cloud.firestore {
     function manifestPath(userId) {
       return /databases/$(database)/documents/users/$(userId)/library/manifest;
     }
+    function deletionPath(userId) {
+      return /databases/$(database)/documents/users/$(userId)/library/deletion;
+    }
     function established(userId) {
       return exists(manifestPath(userId));
     }
+    function deletionBlocked(userId) {
+      return exists(deletionPath(userId));
+    }
+    function snapshotPath(userId, snapshotId) {
+      return /databases/$(database)/documents/users/$(userId)/library/manifest/snapshots/$(snapshotId);
+    }
+    function snapshotIdForRevision(revision) {
+      return revision % 2 == 0 ? 'snapshot-0' : 'snapshot-1';
+    }
     function validManifest(data, userId) {
-      return data.keys().hasOnly(['revision', 'snapshotId', 'updatedAt'])
+      let parent = get(snapshotPath(userId, data.snapshotId));
+      return data.keys().hasOnly(['revision', 'snapshotId', 'snapshotWriterId', 'updatedAt'])
         && data.revision is int && data.revision > 0
-        && data.snapshotId is string && data.snapshotId.size() > 0 && data.snapshotId.size() <= 64
+        && data.snapshotId == snapshotIdForRevision(data.revision)
+        && data.snapshotWriterId is string
+        && data.snapshotWriterId.size() > 0 && data.snapshotWriterId.size() <= 64
         && data.updatedAt is timestamp
-        && exists(/databases/$(database)/documents/users/$(userId)/library/manifest/snapshots/$(data.snapshotId));
+        && parent.data.revision == data.revision
+        && parent.data.writerId == data.snapshotWriterId;
     }
     function validSnapshot(data) {
-      return data.keys().hasOnly(['chunkCount', 'createdAt'])
+      return data.keys().hasOnly(['revision', 'writerId', 'chunkCount', 'createdAt'])
+        && data.revision is int && data.revision > 0
+        && data.writerId is string && data.writerId.size() > 0 && data.writerId.size() <= 64
         && data.chunkCount is int && data.chunkCount > 0 && data.chunkCount <= 128
         && data.createdAt is timestamp;
     }
     function validChunk(data, snapshotId, chunkId, userId) {
-      let parent = get(/databases/$(database)/documents/users/$(userId)/library/manifest/snapshots/$(snapshotId));
-      return data.keys().hasOnly(['index', 'data'])
+      let parent = get(snapshotPath(userId, snapshotId));
+      return data.keys().hasOnly(['revision', 'writerId', 'index', 'data'])
+        && data.revision == parent.data.revision
+        && data.writerId == parent.data.writerId
         && data.index is int && data.index >= 0 && data.index < parent.data.chunkCount
         && chunkId == string(data.index)
         && data.data is string && data.data.size() > 0 && data.data.size() <= 240000;
+    }
+    function validFirstSnapshot(userId, snapshotId, data) {
+      return !established(userId)
+        && admissionOpen()
+        && snapshotId == snapshotIdForRevision(1)
+        && data.revision == 1;
+    }
+    function validNextSnapshot(userId, snapshotId, data) {
+      let current = get(manifestPath(userId));
+      return established(userId)
+        && current.data.revision is int
+        && snapshotId == snapshotIdForRevision(current.data.revision + 1)
+        && snapshotId != current.data.snapshotId
+        && data.revision == current.data.revision + 1;
+    }
+    function writableSnapshot(userId, snapshotId) {
+      let parent = get(snapshotPath(userId, snapshotId));
+      let current = get(manifestPath(userId));
+      return (!established(userId)
+          && snapshotId == snapshotIdForRevision(1)
+          && parent.data.revision == 1)
+        || (established(userId)
+          && snapshotId != current.data.snapshotId
+          && snapshotId == snapshotIdForRevision(current.data.revision + 1)
+          && parent.data.revision == current.data.revision + 1);
+    }
+    function inactiveOrNoManifest(userId, snapshotId) {
+      return !established(userId)
+        || get(manifestPath(userId)).data.snapshotId != snapshotId;
     }
     match /config/release {
       allow read: if request.auth != null;
       allow write: if false;
     }
+    match /users/{userId}/library/deletion {
+      allow read: if signedInOwner(userId);
+      allow create: if signedInOwner(userId)
+        && !deletionBlocked(userId)
+        && request.resource.data.keys().hasOnly(['blocked'])
+        && request.resource.data.blocked == true;
+      allow update, delete: if false;
+    }
     match /users/{userId}/library/manifest {
       allow read, delete: if signedInOwner(userId);
-      allow create: if signedInOwner(userId) && admissionOpen()
+      allow create: if signedInOwner(userId) && !deletionBlocked(userId) && admissionOpen()
         && validManifest(request.resource.data, userId);
-      allow update: if signedInOwner(userId)
+      allow update: if signedInOwner(userId) && !deletionBlocked(userId)
         && validManifest(request.resource.data, userId)
         && request.resource.data.revision == resource.data.revision + 1;
     }
     match /users/{userId}/library/manifest/snapshots/{snapshotId} {
-      allow read, delete: if signedInOwner(userId);
-      allow create: if signedInOwner(userId) && (admissionOpen() || established(userId))
+      allow read: if signedInOwner(userId);
+      allow create, update: if signedInOwner(userId) && !deletionBlocked(userId)
+        && (validFirstSnapshot(userId, snapshotId, request.resource.data)
+          || validNextSnapshot(userId, snapshotId, request.resource.data))
         && validSnapshot(request.resource.data);
+      allow delete: if signedInOwner(userId)
+        && (deletionBlocked(userId) || inactiveOrNoManifest(userId, snapshotId));
     }
     match /users/{userId}/library/manifest/snapshots/{snapshotId}/chunks/{chunkId} {
-      allow read, delete: if signedInOwner(userId);
-      allow create: if signedInOwner(userId)
+      allow read: if signedInOwner(userId);
+      allow create, update: if signedInOwner(userId) && !deletionBlocked(userId)
         && exists(/databases/$(database)/documents/users/$(userId)/library/manifest/snapshots/$(snapshotId))
+        && writableSnapshot(userId, snapshotId)
         && validChunk(request.resource.data, snapshotId, chunkId, userId);
+      allow delete: if signedInOwner(userId)
+        && (deletionBlocked(userId) || inactiveOrNoManifest(userId, snapshotId));
     }
   }
 }

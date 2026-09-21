@@ -1578,8 +1578,10 @@ export function Info({ type }: { type: "help" | "privacy" | "terms" }) {
             account. Live account deletion removes cloud data and stops access;
             browser caches on this device are cleared. Another device may retain
             an offline copy until it next signs in or clears its data.
+            Firebase retains a content-free blocked marker for the deleted
+            account ID so another signed-in tab cannot recreate the library.
             Operator-held disaster recovery exports may retain deleted data for
-            up to 30 days; deletion records must be applied before any restored
+            up to 30 days; deletion guards must be checked before any restored
             database is made accessible.
           </p>
           <h2>Contact</h2>
