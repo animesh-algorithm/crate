@@ -60,3 +60,7 @@ The marketing photographs and poster are bundled, fictional synthetic assets in 
 The public story describes Crate as “for Instagram saves” and uses one conversion action: “Organize my saves.” New personal libraries enter through Google sign-in, then an in-app Instagram export guide and the existing preview/consent import. Existing device-only libraries remain available and are never uploaded automatically; users export a backup, sign in, and explicitly restore it if they want to migrate. The sample library remains available from the app entry screen.
 
 Suggested collections remain private device drafts until individually saved. They appear above saved collections on the dashboard, have searchable `/app/suggested/:id` views, and can also be included in global search with `scope=suggested`.
+
+## About the creator
+
+Created by [Animesh Sharma](https://animesh.cc). For product design and development work, visit [Hire Animesh](https://hire.animesh.cc).
